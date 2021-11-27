@@ -24,7 +24,7 @@ Example:
         # The next url needs some additional information.
         # It is thus stored as yaml-dictionary.
 
-        - https://pad.url1.org/p/some-third-pad:
+        - "https://pad.url1.org/p/some-third-pad":
             name: explicit_filename.txt
             key2: value2
 

@@ -1,3 +1,4 @@
 ipydex
 pyyaml
 gitpython
+appdirs

@@ -7,16 +7,21 @@ from ipydex import IPS, activate_ips_on_exception
 
 # noinspection PyPep8Naming
 class TestCore(unittest.TestCase):
-    def setUp(self):
-        pass
 
-    def tearDown(self) -> None:
-
+    def _set_workdir_to_project_root(self):
         try:
             cwd = os.getcwd()
         except FileNotFoundError:
             # this happens before any test is run. Seems to be a quirk of unittest.
-            return
+            project_root = os.path.dirname(os.path.dirname(__file__))
+            os.chdir(project_root)
+
+    def setUp(self):
+        self._set_workdir_to_project_root()
+
+    def tearDown(self) -> None:
+        self._set_workdir_to_project_root()
+        
         c = Core()
         c.purge_pad_repo(ignore_errors=True)
         
@@ -46,3 +51,22 @@ class TestCore(unittest.TestCase):
         os.rename(f"{c.checkfile}_backup", c.checkfile)
         c.purge_pad_repo()
         self.assertFalse(os.path.exists(c.repo_dir))
+
+    def test_load_sources(self):
+
+        c = Core()
+        c.init_pad_repo()
+        sources = c.load_pad_sources()
+
+        self.assertEqual(len(sources), 3)
+        
+        self.assertEqual(sources[0]["url"], "https://etherpad.wikimedia.org/p/padstogit_testpad1")
+        self.assertEqual(sources[0]["name"], "padstogit_testpad1.txt"        )
+        
+        self.assertEqual(sources[1]["url"], "https://etherpad.wikimedia.org/p/padstogit_testpad2")
+        self.assertEqual(sources[1]["name"], "renamed_testpad.md"        )
+        
+
+        
+
+
