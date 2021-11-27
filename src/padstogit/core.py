@@ -1,5 +1,6 @@
 import os
 import shutil
+import requests
 import git
 import yaml
 import pathlib
@@ -156,6 +157,42 @@ class Core():
             else:
                 raise TypeError(f"unexpexted:{type(s)}")
         return sources
+
+    def goto_paddir(self):
+        paddir = os.path.join(self.repo_dir, "pads")
+        os.makedirs(paddir, exist_ok=True)
+        os.chdir(paddir)
+
+    def download_pad_contents(self, sources_path=None):
+        """
+        create and change to the directory where the pads are actually placed
+        (to avoind name collissions)
+        """
+        sources = self.load_pad_sources(sources_path=sources_path)
+
+        self.goto_paddir()
+     
+
+        for sdict in sources:
+            fname = sdict["name"]
+            url = sdict["url"]
+
+            res = requests.get(url)
+            if not res.status_code == 200:
+                raise ValueError(f"unexpected status code for url {url}")
+            
+            with open(fname, "wb") as txtfile:
+                txtfile.write(res.content)
+
+    def commit_repo(self):
+
+        os.chdir(self.repo_dir)
+
+        r = git.Repo(self.repo_dir)
+
+        IPS()
+
+
 
 
 # https://etherpad.wikimedia.org/p/padstogit_testpad1/export/txt

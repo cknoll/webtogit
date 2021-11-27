@@ -1,23 +1,24 @@
 import unittest
 import os
+import glob
 from padstogit import Core
 
-from ipydex import IPS, activate_ips_on_exception
+from ipydex import IPS, activate_ips_on_exception, TracerFactory
+ST = TracerFactory() # useful for debugging
 # activate_ips_on_exception()
 
 
 TEST_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "test-data"))
+TEST_SOURCES = os.path.join(TEST_DATA_DIR, "sources.yml")
 
 # noinspection PyPep8Naming
 class TestCore(unittest.TestCase):
 
     def _set_workdir_to_project_root(self):
-        try:
-            cwd = os.getcwd()
-        except FileNotFoundError:
-            # this happens before any test is run. Seems to be a quirk of unittest.
-            project_root = os.path.dirname(os.path.dirname(__file__))
-            os.chdir(project_root)
+      
+        # this happens before any test is run. Seems to be a quirk of unittest.
+        project_root = os.path.dirname(os.path.dirname(__file__))
+        os.chdir(project_root)
 
     def setUp(self):
         self._set_workdir_to_project_root()
@@ -60,7 +61,7 @@ class TestCore(unittest.TestCase):
 
         self.c = self.c
         self.c.init_pad_repo()
-        sources = self.c.load_pad_sources(os.path.join(TEST_DATA_DIR, "sources.yml"))
+        sources = self.c.load_pad_sources(TEST_SOURCES)
 
         self.assertEqual(len(sources), 3)
         
@@ -74,7 +75,13 @@ class TestCore(unittest.TestCase):
     def test_download(self):
         
         self.c.init_pad_repo()
-        
+        self.c.download_pad_contents(sources_path=TEST_SOURCES)
+
+        res_txt = glob.glob(os.path.join(self.c.repo_dir, "pads", "*.txt"))
+        res_md = glob.glob(os.path.join(self.c.repo_dir, "pads", "*.md"))
+
+        self.assertEqual(len(res_txt), 2)
+        self.assertEqual(len(res_md), 1)
 
 
 
