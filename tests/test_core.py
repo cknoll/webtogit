@@ -5,6 +5,9 @@ from padstogit import Core
 from ipydex import IPS, activate_ips_on_exception
 # activate_ips_on_exception()
 
+
+TEST_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "test-data"))
+
 # noinspection PyPep8Naming
 class TestCore(unittest.TestCase):
 
@@ -56,7 +59,7 @@ class TestCore(unittest.TestCase):
 
         c = Core()
         c.init_pad_repo()
-        sources = c.load_pad_sources()
+        sources = c.load_pad_sources(os.path.join(TEST_DATA_DIR, "sources.yml"))
 
         self.assertEqual(len(sources), 3)
         
