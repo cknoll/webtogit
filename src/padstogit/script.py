@@ -20,7 +20,10 @@ def main():
     cmd_docs = ", ".join([f"`{key}` ({value})" for key, value in cmd_mapping.items()])
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "cmd", help=f"main command: allowed values: {cmd_docs}", choices=cmd_mapping.keys(), metavar="cmd"
+        "cmd",
+        help=f"main command: allowed values: {cmd_docs}",
+        choices=cmd_mapping.keys(),
+        metavar="cmd",
     )
 
     args = parser.parse_args()

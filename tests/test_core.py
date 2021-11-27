@@ -4,7 +4,8 @@ import glob
 from padstogit import Core
 
 from ipydex import IPS, activate_ips_on_exception, TracerFactory
-ST = TracerFactory() # useful for debugging
+
+ST = TracerFactory()  # useful for debugging
 # activate_ips_on_exception()
 
 
@@ -13,9 +14,8 @@ TEST_SOURCES = os.path.join(TEST_DATA_DIR, "sources.yml")
 
 # noinspection PyPep8Naming
 class TestCore(unittest.TestCase):
-
     def _set_workdir_to_project_root(self):
-      
+
         # this happens before any test is run. Seems to be a quirk of unittest.
         project_root = os.path.dirname(os.path.dirname(__file__))
         os.chdir(project_root)
@@ -26,7 +26,7 @@ class TestCore(unittest.TestCase):
 
     def tearDown(self) -> None:
         self._set_workdir_to_project_root()
-        
+
         self.c.purge_pad_repo(ignore_errors=True)
         del self.c
 
@@ -64,16 +64,15 @@ class TestCore(unittest.TestCase):
         sources = self.c.load_pad_sources(TEST_SOURCES)
 
         self.assertEqual(len(sources), 3)
-        
-        self.assertEqual(sources[0]["url"], "https://etherpad.wikimedia.org/p/padstogit_testpad1")
-        self.assertEqual(sources[0]["name"], "padstogit_testpad1.txt"        )
-        
-        self.assertEqual(sources[1]["url"], "https://etherpad.wikimedia.org/p/padstogit_testpad2")
-        self.assertEqual(sources[1]["name"], "renamed_testpad.md"        )
 
+        self.assertEqual(sources[0]["url"], "https://etherpad.wikimedia.org/p/padstogit_testpad1")
+        self.assertEqual(sources[0]["name"], "padstogit_testpad1.txt")
+
+        self.assertEqual(sources[1]["url"], "https://etherpad.wikimedia.org/p/padstogit_testpad2")
+        self.assertEqual(sources[1]["name"], "renamed_testpad.md")
 
     def test_download(self):
-        
+
         self.c.init_pad_repo()
         self.c.download_pad_contents(sources_path=TEST_SOURCES)
 
@@ -82,11 +81,3 @@ class TestCore(unittest.TestCase):
 
         self.assertEqual(len(res_txt), 2)
         self.assertEqual(len(res_md), 1)
-
-
-
-        
-
-        
-
-
