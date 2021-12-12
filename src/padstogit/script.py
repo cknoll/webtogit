@@ -15,13 +15,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--print-config",
-        help=f"print the current configuration (and all relevant paths)",
-        action="store_true"
-    
+        help=f"print the current configuration (and all relevant paths). Then exit.",
+        action="store_true",
     )
     parser.add_argument(
         "--config-path",
-        help=f"set the path to the configuration directory (containing sources.yml and settings.yml)",
+        help=f"set the path to the configuration directory (containing sources.yml "
+        "and settings.yml)",
     )
     parser.add_argument(
         "--data-path",
@@ -34,21 +34,9 @@ def main():
 
     if args.print_config:
         c.print_config()
- 
+        exit()
 
-    return 
-
-    if args.cmd:
-        if args.cmd == "cmd1":
-            core.script_main()
-        elif args.cmd == "cmd2":
-            core.script_main()
-        elif args.cmd == "cmd3":
-            core.script_main()
-        else:
-            print("unknown command")
-    else:
-        print("nothing to do, see option `--help` for more info")
+    c.main()
 
 
 if __name__ == "__main__":

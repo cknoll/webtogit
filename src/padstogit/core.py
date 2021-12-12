@@ -4,6 +4,7 @@ import requests
 import git
 import yaml
 import pathlib
+from typing import List
 import appdirs
 from ipydex import IPS, activate_ips_on_exception
 
@@ -33,7 +34,6 @@ class Core:
     """
 
     def __init__(self, testmode=False, **kwargs):
-
 
         default_data_path = appdirs.user_data_dir(appname=APPNAME)
         default_config_path = appdirs.user_config_dir(appname=APPNAME)
@@ -207,6 +207,30 @@ class Core:
         for key in keys:
             value = getattr(self, key, None)
             print(f"{key}: {value}")
+
+    @staticmethod
+    def make_report(self, changed_files: List[str]) -> str:
+        assert isinstance(changed_files, list)
+        report_lines = [f"{len(changed_files)} files chaged:"] + changed_files
+
+        report = "\n".join(report_lines)
+        return report
+
+    def main(self):
+        """
+        This is the main method of the script. It performs the following steps:
+
+        1. load sources.yml
+        2. download files
+        3. commit to repo
+        3. print a report of what as changed
+        """
+
+        sources = self.load_pad_sources()
+        self.download_pad_contents()
+        changed_files = self.make_commit()
+        print(make_report(changed_files))
+
 
 # https://etherpad.wikimedia.org/p/padstogit_testpad1/export/txt
 
