@@ -6,7 +6,9 @@ import yaml
 import pathlib
 from typing import List
 import appdirs
-from ipydex import IPS, activate_ips_on_exception
+from ipydex import IPS, activate_ips_on_exception, TracerFactory
+
+ST = TracerFactory()
 
 activate_ips_on_exception()
 
@@ -37,8 +39,12 @@ class Core:
 
         default_data_path = appdirs.user_data_dir(appname=APPNAME)
         default_config_path = appdirs.user_config_dir(appname=APPNAME)
-        self.data_path = kwargs.get("data_path") or default_data_path
-        self.config_path = kwargs.get("config_path") or default_config_path
+        self.data_path = (
+            kwargs.get("data_path") or os.getenv(f"{APPNAME}_DATAPATH") or default_data_path
+        )
+        self.config_path = (
+            kwargs.get("config_path") or os.getenv(f"{APPNAME}_CONFIGPATH") or default_config_path
+        )
         self.sources_path = None
         self.settings = None
         self.repo_dir = None
@@ -62,7 +68,7 @@ class Core:
 
         os.chdir(self.config_path)
 
-        if self.testmode:
+        if self.testmode or os.getenv(f"{APPNAME}_TESTMODE"):
             repo_name = f"{APPNAME}-test-repo"
         else:
             repo_name = "archived-pads"
@@ -84,12 +90,12 @@ class Core:
         self.repo_name = self.settings["repo_name"]
         self.repo_dir = os.path.join(self.repo_parent_path, self.repo_name)
 
-    def init_pad_repo(self):
+    def init_pad_repo(self) -> git.Repo:
 
         os.chdir(self.data_path)
 
         if os.path.exists(self.repo_dir):
-            raise FileExistsError(f"{self.repo_dir} already exists")
+            raise FileExistsError(f"{self.repo_dir} already exists. Please move dir and retry.")
 
         r = git.Repo.init(self.repo_dir)
         os.chdir(self.repo_dir)
@@ -119,6 +125,8 @@ class Core:
         r.index.add([fname])
 
         r.index.commit("initial commit")
+
+        return r
 
     def purge_pad_repo(self, ignore_errors=False):
 
@@ -186,11 +194,20 @@ class Core:
             with open(fname, "wb") as txtfile:
                 txtfile.write(res.content)
 
+    def get_or_create_repo(self) -> git.Repo:
+        try:
+            r = git.Repo(self.repo_dir)
+        except (git.InvalidGitRepositoryError, git.NoSuchPathError) as err:
+            print(f"A git repo does not exist in {self.repo_dir}. Creating a new.")
+            r = self.init_pad_repo()
+
+        return r
+
     def make_commit(self):
 
         os.chdir(self.repo_dir)
+        r = self.get_or_create_repo()
 
-        r = git.Repo(self.repo_dir)
         r.git.add("pads/")
         diff_objects = r.index.diff(r.head.commit)
 
@@ -203,34 +220,44 @@ class Core:
         return changedFiles
 
     def print_config(self):
-        keys = ("data_path", "config_path", "repo_name")
+        keys = ("config_path", "repo_dir", "sources_path")
 
+        print(f"\n{APPNAME} configuration:")
         for key in keys:
             value = getattr(self, key, None)
-            print(f"{key}: {value}")
+            print(f" {key}: {value}")
 
     @staticmethod
-    def make_report(self, changed_files: List[str]) -> str:
+    def make_report(changed_files: List[str]) -> str:
         assert isinstance(changed_files, list)
-        report_lines = [f"{len(changed_files)} files chaged:"] + changed_files
+        report_lines = ["\n", f"{len(changed_files)} files changed:"] + changed_files
 
         report = "\n".join(report_lines)
         return report
 
-    def main(self):
+    def main(self, print_flag=True):
         """
         This is the main method of the script. It performs the following steps:
 
+        1. get or create repo
         1. load sources.yml
         2. download files
         3. commit to repo
-        3. print a report of what as changed
+        4. return and print a report of what as changed
         """
 
+        self.get_or_create_repo()
         sources = self.load_pad_sources()
         self.download_pad_contents()
         changed_files = self.make_commit()
-        print(make_report(changed_files))
+
+        if print_flag:
+            print()
+        self.print_config()
+
+        print(self.make_report(changed_files))
+
+        return changed_files
 
 
 # https://etherpad.wikimedia.org/p/padstogit_testpad1/export/txt
@@ -243,9 +270,3 @@ def get_padname_from_url(url, append=".txt"):
     # assume that padnames cannot contain slashes
     padname = url.split("/")[-1]
     return f"{padname}{append}"
-
-
-def script_main():
-
-    IPS()
-    print("Script successfully executed")

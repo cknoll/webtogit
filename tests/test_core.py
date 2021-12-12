@@ -1,8 +1,9 @@
 import unittest
 import os
 import glob
-from padstogit import Core, APPNAME
 import subprocess
+import shutil
+from padstogit import Core, APPNAME
 
 from ipydex import IPS, activate_ips_on_exception, TracerFactory
 
@@ -17,7 +18,8 @@ TEST_SOURCES = os.path.join(TEST_DATA_DIR, "sources.yml")
 class PTG_TestCase(unittest.TestCase):
     def _set_workdir_to_project_root(self):
 
-        # this happens before any test is run. Seems to be a quirk of unittest.
+        # the unit test framework seems to mess up the current working dir
+        # -> we better set it explicitly 
         project_root = os.path.dirname(os.path.dirname(__file__))
         os.chdir(project_root)
 
@@ -26,11 +28,27 @@ class PTG_TestCase(unittest.TestCase):
         self.c = Core(testmode=True)
         self.c.sources_path = TEST_SOURCES
 
+        # this is necessary because we will call scripts via subprocess
+        self.environ = {}
+        self.environ[f"{APPNAME}_DATAPATH"] = TEST_DATA_DIR
+        self.environ[f"{APPNAME}_DATAPATH"] = TEST_DATA_DIR
+
+        self._set_workdir_to_project_root()
+        self.original_test_data_dir_content = os.listdir("./tests/test-data/")
+
+
     def tearDown(self) -> None:
         self._set_workdir_to_project_root()
 
         self.c.purge_pad_repo(ignore_errors=True)
         del self.c
+
+        os.chdir("./tests/test-data/")
+        for name in self.original_test_data_dir_content:
+            if os.path.isfile(name):
+                os.remove(name)
+            elif os.path.isdir(name):
+                shutil.rmtree(name)
 
 
 class TestCore(PTG_TestCase):
@@ -103,13 +121,15 @@ class TestCore(PTG_TestCase):
         self.assertEqual(len(changed_files), 1)
 
 
-def run(cmd):
+def run_command(cmd, env: dict) -> subprocess.CompletedProcess:
+
+    complete_env = {**os.environ, **env}
 
     if isinstance(cmd, str):
         cmd = cmd.split(" ")
     assert isinstance(cmd, list)
 
-    res = subprocess.run(cmd, capture_output=True)
+    res = subprocess.run(cmd, capture_output=True, env=complete_env)
     res.stdout = res.stdout.decode("utf8")
     res.stderr = res.stderr.decode("utf8")
 
@@ -118,10 +138,17 @@ def run(cmd):
 
 class TestCommandLine(PTG_TestCase):
     def test_print_config(self):
-        res = run([APPNAME, "--print-config"])
+
+        res = run_command([APPNAME, "--print-config"], self.environ)
 
         self.assertEqual(res.returncode, 0)
         self.assertNotIn("None", res.stdout)
+        self.assertIn(TEST_SOURCES, res.stdout)
+    
+    def test_run_main(self):
+        res = run_command([APPNAME], self.environ)
+
+        self.assertEqual(res.returncode, 0)
 
 
 if __name__ == "__main__":
