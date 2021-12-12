@@ -24,6 +24,7 @@ class PTG_TestCase(unittest.TestCase):
     def setUp(self):
         self._set_workdir_to_project_root()
         self.c = Core(testmode=True)
+        self.c.sources_path = TEST_SOURCES
 
     def tearDown(self) -> None:
         self._set_workdir_to_project_root()
@@ -63,7 +64,7 @@ class TestCore(PTG_TestCase):
     def test_load_sources(self):
 
         self.c.init_pad_repo()
-        sources = self.c.load_pad_sources(TEST_SOURCES)
+        sources = self.c.load_pad_sources()
 
         self.assertEqual(len(sources), 3)
 
@@ -76,7 +77,8 @@ class TestCore(PTG_TestCase):
     def test_download_and_commit(self):
 
         self.c.init_pad_repo()
-        self.c.download_pad_contents(sources_path=TEST_SOURCES)
+        self.c.download_pad_contents()  # note that the sources_path is set by .setUp()
+
 
         res_txt = glob.glob(os.path.join(self.c.repo_dir, "pads", "*.txt"))
         res_md = glob.glob(os.path.join(self.c.repo_dir, "pads", "*.md"))
