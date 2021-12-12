@@ -19,7 +19,7 @@ class PTG_TestCase(unittest.TestCase):
     def _set_workdir_to_project_root(self):
 
         # the unit test framework seems to mess up the current working dir
-        # -> we better set it explicitly 
+        # -> we better set it explicitly
         project_root = os.path.dirname(os.path.dirname(__file__))
         os.chdir(project_root)
 
@@ -36,15 +36,22 @@ class PTG_TestCase(unittest.TestCase):
         self._set_workdir_to_project_root()
         self.original_test_data_dir_content = os.listdir("./tests/test-data/")
 
-
     def tearDown(self) -> None:
         self._set_workdir_to_project_root()
 
         self.c.purge_pad_repo(ignore_errors=True)
         del self.c
 
+
+        # delete all files and directories which have not been present before this test:
+        self._set_workdir_to_project_root()
         os.chdir("./tests/test-data/")
-        for name in self.original_test_data_dir_content:
+
+        new_content = [
+            name for name in os.listdir("./") if name not in self.original_test_data_dir_content
+        ]
+
+        for name in new_content:
             if os.path.isfile(name):
                 os.remove(name)
             elif os.path.isdir(name):
@@ -97,7 +104,6 @@ class TestCore(PTG_TestCase):
         self.c.init_pad_repo()
         self.c.download_pad_contents()  # note that the sources_path is set by .setUp()
 
-
         res_txt = glob.glob(os.path.join(self.c.repo_dir, "pads", "*.txt"))
         res_md = glob.glob(os.path.join(self.c.repo_dir, "pads", "*.md"))
 
@@ -144,7 +150,7 @@ class TestCommandLine(PTG_TestCase):
         self.assertEqual(res.returncode, 0)
         self.assertNotIn("None", res.stdout)
         self.assertIn(TEST_SOURCES, res.stdout)
-    
+
     def test_run_main(self):
         res = run_command([APPNAME], self.environ)
 
