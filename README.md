@@ -8,28 +8,28 @@ PadsToGit is a simple command line tool to facilitate archiving of web based pad
 
 There are the following files:
 
-- settings.yml
-- sources.yml
-Example:
+- `CONFIG_PATH/settings.yml` (not yet implemented)
+- `CONFIG_PATH/sources.yml`
+  Example:
     ```yaml
-        # This is a comment and will be ignored. Same for empty lines.
+  # This is a comment and will be ignored. Same for empty lines.
+  
+  # The top YAML-element is a list. Entries are strings or dicts.
+  # The following two list entries are just simple literal strings
+  # (one url per line):
+  
+  - https://pad.url1.org/p/some-pad
+  - https://pad.url1.org/p/some-other-pad
+  
+  # The next url needs some additional information.
+  # It is thus stored as yaml-dictionary.
 
-        # The top YAML-element is a list. Entries are strings or dicts.
-        # The following two list entries are just simple literal strings
-        # (one url per line):
+  - "https://pad.url1.org/p/some-third-pad":
+      name: explicit_filename.txt
+      key2: value2
 
-        - https://pad.url1.org/p/some-pad
-        - https://pad.url1.org/p/some-other-pad
-
-        # The next url needs some additional information.
-        # It is thus stored as yaml-dictionary.
-
-        - "https://pad.url1.org/p/some-third-pad":
-            name: explicit_filename.txt
-            key2: value2
-
-        - https://pad.url2.org/p/yet-another-pad
-    ```
+  - https://pad.url2.org/p/yet-another-pad
+  ```
 
 During installation a new git repository is created.
 
@@ -40,6 +40,12 @@ The program is expected to be executed regularly (e.g. once a day). It parses `s
 
 - call `padstogit` from the command line
 - TODO: add information about cron-integration here
+
+## Open Questions
+
+- What should happen with configuration and created data in the case of uninstallation or reinstallation?
+
+
 
 # Development Notes
 
