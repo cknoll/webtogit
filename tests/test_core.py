@@ -1,7 +1,8 @@
 import unittest
 import os
 import glob
-from padstogit import Core
+from padstogit import Core, APPNAME
+import subprocess
 
 from ipydex import IPS, activate_ips_on_exception, TracerFactory
 
@@ -13,7 +14,7 @@ TEST_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "test-da
 TEST_SOURCES = os.path.join(TEST_DATA_DIR, "sources.yml")
 
 # noinspection PyPep8Naming
-class TestCore(unittest.TestCase):
+class PTG_TestCase(unittest.TestCase):
     def _set_workdir_to_project_root(self):
 
         # this happens before any test is run. Seems to be a quirk of unittest.
@@ -30,6 +31,8 @@ class TestCore(unittest.TestCase):
         self.c.purge_pad_repo(ignore_errors=True)
         del self.c
 
+
+class TestCore(PTG_TestCase):
     def test_core1(self):
 
         self.assertEqual(self.c.repo_name, "padstogit-test-repo")
@@ -96,6 +99,27 @@ class TestCore(unittest.TestCase):
 
         changed_files = self.c.make_commit()
         self.assertEqual(len(changed_files), 1)
+
+
+def run(cmd):
+
+    if isinstance(cmd, str):
+        cmd = cmd.split(" ")
+    assert isinstance(cmd, list)
+
+    res = subprocess.run(cmd, capture_output=True)
+    res.stdout = res.stdout.decode("utf8")
+    res.stderr = res.stderr.decode("utf8")
+
+    return res
+
+
+class TestCommandLine(PTG_TestCase):
+    def test_print_config(self):
+        res = run([APPNAME, "--print-config"])
+
+        self.assertEqual(res.returncode, 0)
+        self.assertNotIn("None", res.stdout)
 
 
 if __name__ == "__main__":
