@@ -222,7 +222,7 @@ class Core:
     def print_config(self):
         keys = ("config_path", "repo_dir", "sources_path")
 
-        print(f"\n{APPNAME} configuration:")
+        print(f"{APPNAME} configuration:")
         for key in keys:
             value = getattr(self, key, None)
             print(f" {key}: {value}")
@@ -263,9 +263,12 @@ class Core:
 # https://etherpad.wikimedia.org/p/padstogit_testpad1/export/txt
 
 
-def get_padname_from_url(url, append=".txt"):
+def get_padname_from_url(url, append=".txt") -> str:
     if not url.startswith("http"):
         raise ValueError(f"invalid url: {url}")
+
+    url = url.rstrip("/")
+    url = url.rstrip("/export/txt")
 
     # assume that padnames cannot contain slashes
     padname = url.split("/")[-1]
