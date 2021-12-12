@@ -31,22 +31,17 @@ Example:
         - https://pad.url2.org/p/yet-another-pad
     ```
 
-During installation a new git repository is created. The script parses `sources.yml` and downloads the content into the working dir of the repo and adds the file to the index. Then if there are changes, it makes a commit to the repo.
+During installation a new git repository is created.
+
+The program is expected to be executed regularly (e.g. once a day). It parses `sources.yml` and downloads the content into the working dir of the repo and adds the file to the index. Then if there are changes, it makes a commit to the repo.
 
 
 ## Usage
 
-- Rename directory `src/package_name`
-- Edit `setupy.py`: replace dummy data with real data.
-- Add your source. a) Either to [`core.py`](src/package_name/core.py) or b) to your own separate file(s).
-    - a) simplifies importing your module
-    - b) is more flexible but you have to take care of importability yourself.
-
+- call `padstogit` from the command line
+- TODO: add information about cron-integration here
 
 # Development Notes
-
-- basic unittest
-- `script.py` and associated entrypoint in `setup.py` (allows to call some functionality of the package directly from command line (try `package_name cmd1`))
 
 For local development it is recommended to install this package in [editable mode](https://pip.pypa.io/en/latest/cli/pip_wheel/?highlight=editable#cmdoption-e): `pip install -e .` (run from where `setup.py` lives).
 

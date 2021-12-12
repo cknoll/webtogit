@@ -59,7 +59,6 @@ class TestCore(unittest.TestCase):
 
     def test_load_sources(self):
 
-        self.c = self.c
         self.c.init_pad_repo()
         sources = self.c.load_pad_sources(TEST_SOURCES)
 
@@ -71,7 +70,7 @@ class TestCore(unittest.TestCase):
         self.assertEqual(sources[1]["url"], "https://etherpad.wikimedia.org/p/padstogit_testpad2")
         self.assertEqual(sources[1]["name"], "renamed_testpad.md")
 
-    def test_download(self):
+    def test_download_and_commit(self):
 
         self.c.init_pad_repo()
         self.c.download_pad_contents(sources_path=TEST_SOURCES)
@@ -81,3 +80,23 @@ class TestCore(unittest.TestCase):
 
         self.assertEqual(len(res_txt), 2)
         self.assertEqual(len(res_md), 1)
+
+        changed_files = self.c.make_commit()
+
+        self.assertEqual(len(changed_files), 3)
+
+        changed_files = self.c.make_commit()
+        self.assertEqual(len(changed_files), 0)
+
+        pad_path = os.path.join(
+            self.c.repo_parent_path, self.c.repo_name, "pads", "padstogit_testpad1.txt"
+        )
+        with open(pad_path, "w") as txtfile:
+            txtfile.write("unittest!\n")
+
+        changed_files = self.c.make_commit()
+        self.assertEqual(len(changed_files), 1)
+
+
+if __name__ == "__main__":
+    unittest.main()
