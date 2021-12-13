@@ -1,12 +1,16 @@
 import os
 import shutil
 import requests
+from typing import List
+import pathlib
+
 import git
 import yaml
-import pathlib
-from typing import List
 import appdirs
 from ipydex import IPS, activate_ips_on_exception, TracerFactory
+
+from . import util as u
+
 
 ST = TracerFactory()
 
@@ -273,3 +277,7 @@ def get_padname_from_url(url, append=".txt") -> str:
     # assume that padnames cannot contain slashes
     padname = url.split("/")[-1]
     return f"{padname}{append}"
+
+
+def bootstrap_app():
+    print(u.yellow("not implemented"),  ":-(")
