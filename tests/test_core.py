@@ -6,7 +6,7 @@ import shutil
 import tempfile
 import time
 
-import padstogit as app
+import padstogit as appmod
 from padstogit import Core, APPNAME
 
 from ipydex import IPS, activate_ips_on_exception, TracerFactory
@@ -43,7 +43,7 @@ class PTG_TestCase(unittest.TestCase):
         self._set_workdir_to_project_root()
         # this is necessary because we will call scripts via subprocess
         self.environ = {}
-        self.environ[f"{APPNAME}_DATADIR_PATH"] = TEST_DATA_STORAGE_DIR
+        self.environ[f"{APPNAME}_DATADIR_PATH"] = TEST_WORK_DIR
         self.environ[f"{APPNAME}_CONFIGFILE_PATH"] = TEST_CONFIG_DIR
 
         self._set_workdir_to_project_root()
@@ -51,7 +51,7 @@ class PTG_TestCase(unittest.TestCase):
 
     def setUp(self):
         self._setup_env()
-        self.c = Core(testmode=True)
+        self.c = Core()
         self.c.sources_path = TEST_SOURCES
 
     def tearDown(self) -> None:
@@ -179,19 +179,33 @@ class TestCommandLine(PTG_TestCase):
 
 class TestBootstrap(PTG_TestCase):
     def setUp(self):
-        pass
+        self.environ = {}
+        self.environ[f"{APPNAME}_DATADIR_PATH"] = TEST_WORK_DIR
+        os.environ.update(self.environ)
 
     def tearDown(self):
-        pass
+        os.remove(TEST_CONFIGFILE_PATH)
 
     def test_bootstrap_config(self):
 
         self.assertFalse(os.path.isfile(TEST_CONFIGFILE_PATH))
 
-        app.bootstrap_config(TEST_CONFIGFILE_PATH)
-        config_dict = app.load_config(TEST_CONFIGFILE_PATH)
+        appmod.bootstrap_config(TEST_CONFIGFILE_PATH)
+        config_dict = appmod.load_config(TEST_CONFIGFILE_PATH)
 
         self.assertIsInstance(config_dict, dict)
+
+    def test_bootstrap_data_work_dir(self):
+
+        with self.assertRaises(FileNotFoundError) as cm:
+            appmod.bootstrap_datadir(configfile_path=TEST_CONFIGFILE_PATH)
+
+        appmod.bootstrap_config(TEST_CONFIGFILE_PATH)
+        config_dict = appmod.load_config(TEST_CONFIGFILE_PATH)
+
+        datadir_path = appmod.bootstrap_datadir(configfile_path=TEST_CONFIGFILE_PATH)
+        self.assertEqual(datadir_path, TEST_WORK_DIR)
+
 
 
 if __name__ == "__main__":
