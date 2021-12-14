@@ -48,8 +48,11 @@ class PTG_TestCase(unittest.TestCase):
         self._set_workdir()
         self.original_test_data_dir_content = os.listdir(".")
 
+
     def setUp(self):
         self._setup_env()
+        os.environ.update(self.environ)
+        appmod.bootstrap_app(configfile_path=TEST_CONFIGFILE_PATH)
         self.c = Core()
 
     def tearDown(self) -> None:
@@ -99,10 +102,11 @@ class TestCore(PTG_TestCase):
         self.c.purge_pad_repo()
         self.assertFalse(os.path.exists(self.c.default_repo_dir))
 
-    def test_load_sources(self):
+    def test_load_sources1(self):
 
-        self.c.init_archive_repo()
-        sources = self.c.load_pad_sources()
+        repodir = self.c.repo_paths[0]
+        self.assertTrue(repodir.startswith(TEST_WORK_DIR))
+        sources = self.c.load_webdoc_sources(repodir)
 
         self.assertEqual(len(sources), 3)
 
