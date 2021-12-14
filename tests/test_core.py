@@ -3,6 +3,10 @@ import os
 import glob
 import subprocess
 import shutil
+import tempfile
+import time
+
+import padstogit as app
 from padstogit import Core, APPNAME
 
 from ipydex import IPS, activate_ips_on_exception, TracerFactory
@@ -10,9 +14,21 @@ from ipydex import IPS, activate_ips_on_exception, TracerFactory
 ST = TracerFactory()  # useful for debugging
 # activate_ips_on_exception()
 
+timestr = time.strftime('%Y-%m-%d--%H-%M-%S')
 
-TEST_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "test-data"))
-TEST_SOURCES = os.path.join(TEST_DATA_DIR, "sources.yml")
+
+TEST_WORK_DIR = tempfile.mkdtemp(prefix=timestr)
+
+# This is where the persistent test data is stored
+# (not where data is created and manipulated) during tests
+TEST_DATA_STORAGE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "test-data"))
+
+TEST_CONFIGFILE_PATH = os.path.abspath(
+    os.path.join(TEST_WORK_DIR, "test-config", "settings.yml")
+)
+
+
+# TEST_SOURCES = os.path.join(TEST_DATA_STORAGE_DIR, "sources.yml")  #!!
 
 # noinspection PyPep8Naming
 class PTG_TestCase(unittest.TestCase):
@@ -23,25 +39,26 @@ class PTG_TestCase(unittest.TestCase):
         project_root = os.path.dirname(os.path.dirname(__file__))
         os.chdir(project_root)
 
-    def setUp(self):
+    def _setup_env(self):
         self._set_workdir_to_project_root()
-        self.c = Core(testmode=True)
-        self.c.sources_path = TEST_SOURCES
-
         # this is necessary because we will call scripts via subprocess
         self.environ = {}
-        self.environ[f"{APPNAME}_DATAPATH"] = TEST_DATA_DIR
-        self.environ[f"{APPNAME}_DATAPATH"] = TEST_DATA_DIR
+        self.environ[f"{APPNAME}_DATADIR_PATH"] = TEST_DATA_STORAGE_DIR
+        self.environ[f"{APPNAME}_CONFIGFILE_PATH"] = TEST_CONFIG_DIR
 
         self._set_workdir_to_project_root()
         self.original_test_data_dir_content = os.listdir("./tests/test-data/")
+
+    def setUp(self):
+        self._setup_env()
+        self.c = Core(testmode=True)
+        self.c.sources_path = TEST_SOURCES
 
     def tearDown(self) -> None:
         self._set_workdir_to_project_root()
 
         self.c.purge_pad_repo(ignore_errors=True)
         del self.c
-
 
         # delete all files and directories which have not been present before this test:
         self._set_workdir_to_project_root()
@@ -62,33 +79,33 @@ class TestCore(PTG_TestCase):
     def test_core1(self):
 
         self.assertEqual(self.c.repo_name, "padstogit-test-repo")
-        self.assertFalse(os.path.exists(self.c.repo_dir))
-        self.c.init_pad_repo()
-        self.assertTrue(os.path.isdir(self.c.repo_dir))
+        self.assertFalse(os.path.exists(self.c.default_repo_dir))
+        self.c.init_archive_repo()
+        self.assertTrue(os.path.isdir(self.c.default_repo_dir))
         self.assertTrue(os.path.isfile(self.c.checkfile))
-        self.assertTrue(os.path.isdir(os.path.join(self.c.repo_dir, ".git")))
+        self.assertTrue(os.path.isdir(os.path.join(self.c.default_repo_dir, ".git")))
 
-        self.assertRaises(FileExistsError, self.c.init_pad_repo)
+        self.assertRaises(FileExistsError, self.c.init_archive_repo)
 
         self.c.purge_pad_repo()
-        self.assertFalse(os.path.exists(self.c.repo_dir))
+        self.assertFalse(os.path.exists(self.c.default_repo_dir))
 
         self.assertRaises(FileNotFoundError, self.c.purge_pad_repo)
 
         # ensure that the directory is only deleted if the special file is present
-        self.c.init_pad_repo()
+        self.c.init_archive_repo()
         os.rename(self.c.checkfile, f"{self.c.checkfile}_backup")
         self.assertRaises(FileNotFoundError, self.c.purge_pad_repo)
-        self.assertTrue(os.path.isdir(self.c.repo_dir))
+        self.assertTrue(os.path.isdir(self.c.default_repo_dir))
 
         # now delete the repo
         os.rename(f"{self.c.checkfile}_backup", self.c.checkfile)
         self.c.purge_pad_repo()
-        self.assertFalse(os.path.exists(self.c.repo_dir))
+        self.assertFalse(os.path.exists(self.c.default_repo_dir))
 
     def test_load_sources(self):
 
-        self.c.init_pad_repo()
+        self.c.init_archive_repo()
         sources = self.c.load_pad_sources()
 
         self.assertEqual(len(sources), 3)
@@ -101,11 +118,11 @@ class TestCore(PTG_TestCase):
 
     def test_download_and_commit(self):
 
-        self.c.init_pad_repo()
+        self.c.init_archive_repo()
         self.c.download_pad_contents()  # note that the sources_path is set by .setUp()
 
-        res_txt = glob.glob(os.path.join(self.c.repo_dir, "pads", "*.txt"))
-        res_md = glob.glob(os.path.join(self.c.repo_dir, "pads", "*.md"))
+        res_txt = glob.glob(os.path.join(self.c.default_repo_dir, "pads", "*.txt"))
+        res_md = glob.glob(os.path.join(self.c.default_repo_dir, "pads", "*.md"))
 
         self.assertEqual(len(res_txt), 2)
         self.assertEqual(len(res_md), 1)
@@ -125,6 +142,9 @@ class TestCore(PTG_TestCase):
 
         changed_files = self.c.make_commit()
         self.assertEqual(len(changed_files), 1)
+
+    def test_handle_all_repos(self):
+        res = self.c.handle_all_repos()
 
 
 def run_command(cmd, env: dict) -> subprocess.CompletedProcess:
@@ -155,6 +175,23 @@ class TestCommandLine(PTG_TestCase):
         res = run_command([APPNAME], self.environ)
 
         self.assertEqual(res.returncode, 0)
+
+
+class TestBootstrap(PTG_TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_bootstrap_config(self):
+
+        self.assertFalse(os.path.isfile(TEST_CONFIGFILE_PATH))
+
+        app.bootstrap_config(TEST_CONFIGFILE_PATH)
+        config_dict = app.load_config(TEST_CONFIGFILE_PATH)
+
+        self.assertIsInstance(config_dict, dict)
 
 
 if __name__ == "__main__":
