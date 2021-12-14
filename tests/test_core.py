@@ -32,37 +32,33 @@ TEST_CONFIGFILE_PATH = os.path.abspath(
 
 # noinspection PyPep8Naming
 class PTG_TestCase(unittest.TestCase):
-    def _set_workdir_to_project_root(self):
+    def _set_workdir(self):
 
         # the unit test framework seems to mess up the current working dir
         # -> we better set it explicitly
-        project_root = os.path.dirname(os.path.dirname(__file__))
-        os.chdir(project_root)
+        os.chdir(TEST_WORK_DIR)
 
     def _setup_env(self):
-        self._set_workdir_to_project_root()
+        self._set_workdir()
         # this is necessary because we will call scripts via subprocess
         self.environ = {}
         self.environ[f"{APPNAME}_DATADIR_PATH"] = TEST_WORK_DIR
-        self.environ[f"{APPNAME}_CONFIGFILE_PATH"] = TEST_CONFIG_DIR
+        self.environ[f"{APPNAME}_CONFIGFILE_PATH"] = TEST_CONFIGFILE_PATH
 
-        self._set_workdir_to_project_root()
-        self.original_test_data_dir_content = os.listdir("./tests/test-data/")
+        self._set_workdir()
+        self.original_test_data_dir_content = os.listdir(".")
 
     def setUp(self):
         self._setup_env()
         self.c = Core()
-        self.c.sources_path = TEST_SOURCES
 
     def tearDown(self) -> None:
-        self._set_workdir_to_project_root()
-
-        self.c.purge_pad_repo(ignore_errors=True)
         del self.c
+        self._set_workdir()
+
 
         # delete all files and directories which have not been present before this test:
-        self._set_workdir_to_project_root()
-        os.chdir("./tests/test-data/")
+        self._set_workdir()
 
         new_content = [
             name for name in os.listdir("./") if name not in self.original_test_data_dir_content
@@ -149,7 +145,7 @@ class TestCore(PTG_TestCase):
 
 def run_command(cmd, env: dict) -> subprocess.CompletedProcess:
 
-    complete_env = {**os.environ, **env}
+    complete_env = {**os.environ, "NO_IPS_EXCEPTHOOK": "True", **env}
 
     if isinstance(cmd, str):
         cmd = cmd.split(" ")
@@ -165,11 +161,12 @@ def run_command(cmd, env: dict) -> subprocess.CompletedProcess:
 class TestCommandLine(PTG_TestCase):
     def test_print_config(self):
 
-        res = run_command([APPNAME, "--print-config"], self.environ)
+        res1 = run_command([APPNAME, "--bootstrap-config"], self.environ)
+        self.assertEqual(res1.returncode, 0)
 
-        self.assertEqual(res.returncode, 0)
-        self.assertNotIn("None", res.stdout)
-        self.assertIn(TEST_SOURCES, res.stdout)
+        res2 = run_command([APPNAME, "--print-config"], self.environ)
+        self.assertEqual(res2.returncode, 0)
+        self.assertNotIn("None", res2.stdout)
 
     def test_run_main(self):
         res = run_command([APPNAME], self.environ)

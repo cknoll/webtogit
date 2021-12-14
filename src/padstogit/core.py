@@ -256,13 +256,20 @@ class Core:
         return changedFiles
 
     def print_config(self):
-        keys = ("config_path", "repo_dir", "sources_path")
+        keys = ("configfile_path", "datadir_path", "repos")
 
         print(f"\n{APPNAME} configuration:")
+
+        tmpdict = {}
+
         for key in keys:
             value = getattr(self, key, None)
-            print(f" {key}: {value}")
+            tmpdict[key] = value
+        
+        # use yaml to render the data structures
+        print(yaml.safe_dump(tmpdict))
 
+        
     @staticmethod
     def make_report(changed_files: List[str]) -> str:
         assert isinstance(changed_files, list)
@@ -368,13 +375,13 @@ def _check_config_file(configfile_path, print_flag=True):
         raise KeyError(msg)
 
     if print_flag:
-        print(u.bgreen("✓"), "config file check passed")
+        print(u.bgreen("✓"), "config file check passed:", configfile_path)
 
 
 def bootstrap_config(configfile_path=None, print_flag=True):
 
     if configfile_path is None:
-        configfile_path = DEFAULT_CONFIGFILE_PATH
+        configfile_path = os.getenv(f"{APPNAME}_CONFIGFILE_PATH") or DEFAULT_CONFIGFILE_PATH
 
     if not os.path.isfile(configfile_path):
         # create new config file
@@ -408,7 +415,6 @@ def bootstrap_datadir(configfile_path=None, datadir_path=None):
     print(f"The following repos where found:\n{repo_str}\n")
 
     return c.datadir_path
-
 
 
 def bootstrap_app():
