@@ -38,15 +38,19 @@ class PTG_TestCase(unittest.TestCase):
         # -> we better set it explicitly
         os.chdir(TEST_WORK_DIR)
 
+    def _store_otddc(self):
+
+        self._set_workdir()
+        self.original_test_data_dir_content = os.listdir(".")
+
+
     def _setup_env(self):
         self._set_workdir()
         # this is necessary because we will call scripts via subprocess
         self.environ = {}
         self.environ[f"{APPNAME}_DATADIR_PATH"] = TEST_WORK_DIR
         self.environ[f"{APPNAME}_CONFIGFILE_PATH"] = TEST_CONFIGFILE_PATH
-
-        self._set_workdir()
-        self.original_test_data_dir_content = os.listdir(".")
+        self._store_otddc()
 
 
     def setUp(self):
@@ -55,9 +59,7 @@ class PTG_TestCase(unittest.TestCase):
         appmod.bootstrap_app(configfile_path=TEST_CONFIGFILE_PATH)
         self.c = Core()
 
-    def tearDown(self) -> None:
-        self._set_workdir()
-
+    def _restore_otddc(self):
 
         # delete all files and directories which have not been present before this test:
         self._set_workdir()
@@ -71,6 +73,9 @@ class PTG_TestCase(unittest.TestCase):
                 os.remove(name)
             elif os.path.isdir(name):
                 shutil.rmtree(name)
+
+    def tearDown(self) -> None:
+        self._restore_otddc()
 
 
 class TestCore(PTG_TestCase):
@@ -182,9 +187,11 @@ class TestBootstrap(PTG_TestCase):
         self.environ = {}
         self.environ[f"{APPNAME}_DATADIR_PATH"] = TEST_WORK_DIR
         os.environ.update(self.environ)
+        self._store_otddc()
 
     def tearDown(self):
         os.remove(TEST_CONFIGFILE_PATH)
+        self._restore_otddc()
 
     def test_bootstrap_config(self):
 
