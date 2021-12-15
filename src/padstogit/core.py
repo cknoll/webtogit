@@ -71,6 +71,9 @@ def generate_default_sources_content():
 
 CHECKFILE_NAME = f".{APPNAME}"
 
+# name of the directory inside the repo which contains the actual data
+REPO_DATA_DIR_NAME = "pads"
+
 
 class ObsoleteFunctionError(RuntimeError):
     pass
@@ -220,8 +223,8 @@ class Core:
                 raise TypeError(f"unexpexted:{type(s)}")
         return sources
 
-    def goto_paddir(self, repodir_path):
-        paddir = os.path.join(repodir_path, "pads")
+    def goto_repo_data_dir(self, repodir_path):
+        paddir = os.path.join(repodir_path,  REPO_DATA_DIR_NAME)
         os.makedirs(paddir, exist_ok=True)
         os.chdir(paddir)
 
@@ -232,7 +235,7 @@ class Core:
         """
         sources = self.load_webdoc_sources(repo_dir)
 
-        self.goto_paddir()
+        self.goto_repo_data_dir(repo_dir)
 
         for sdict in sources:
             fname = sdict["name"]
