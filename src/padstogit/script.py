@@ -59,7 +59,8 @@ def main():
         c.print_config()
         exit()
 
-    c.handle_repo()
+    repo_path = c.repo_paths[0]
+    c.handle_repo(repo_path)
 
 
 if __name__ == "__main__":
