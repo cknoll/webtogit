@@ -1,5 +1,5 @@
 """
-Command line interface for padstogit package
+Command line interface for webtogit package
 """
 
 import argparse
