@@ -38,6 +38,7 @@ APPNAME = "webtogit"
 DEFAULT_DATADIR_PATH = appdirs.user_data_dir(appname=APPNAME)
 DEFAULT_CONFIGFILE_PATH = os.path.join(appdirs.user_config_dir(appname=APPNAME), "settings.yml")
 
+
 def generate_default_configfile_content(datadir_path: str) -> str:
     DEFAULT_CONFIGFILE_CONTENT = f"""
     ---
@@ -52,6 +53,7 @@ def generate_default_configfile_content(datadir_path: str) -> str:
     """
 
     return textwrap.dedent(DEFAULT_CONFIGFILE_CONTENT)
+
 
 def generate_default_sources_content():
     default_sources_content = f"""
@@ -70,6 +72,7 @@ def generate_default_sources_content():
 
     return textwrap.dedent(default_sources_content)
 
+
 CHECKFILE_NAME = f".{APPNAME}"
 
 # name of the directory inside the repo which contains the actual data
@@ -78,6 +81,7 @@ REPO_DATA_DIR_NAME = "pads"
 
 class ObsoleteFunctionError(RuntimeError):
     pass
+
 
 class Core:
     """
@@ -90,9 +94,7 @@ class Core:
             datadir_path or os.getenv(f"{APPNAME}_DATADIR_PATH") or DEFAULT_DATADIR_PATH
         )
         self.configfile_path = (
-            configfile_path
-            or os.getenv(f"{APPNAME}_CONFIGFILE_PATH")
-            or DEFAULT_CONFIGFILE_PATH
+            configfile_path or os.getenv(f"{APPNAME}_CONFIGFILE_PATH") or DEFAULT_CONFIGFILE_PATH
         )
         self.configdir = os.path.split(self.configfile_path)[0]
 
@@ -103,7 +105,6 @@ class Core:
 
         self.repo_paths = None
         self._find_repos()
-
 
     def _ensure_existing_dirs(self):
 
@@ -137,7 +138,6 @@ class Core:
 
         return self.repo_paths
 
-
     def init_archive_repo(self, repo_name: str) -> git.Repo:
         """
 
@@ -154,11 +154,8 @@ class Core:
         if repodir_path in self.repo_paths:
             print(f"{repodir_path} is already a valid repo. Nothing to do.")
 
-
         if os.path.exists(repodir_path):
-            raise FileExistsError(
-                f"{repodir_path} already exists. Please move dir and retry."
-            )
+            raise FileExistsError(f"{repodir_path} already exists. Please move dir and retry.")
 
         r = git.Repo.init(repodir_path)
         os.chdir(repodir_path)
@@ -187,7 +184,6 @@ class Core:
         sources_content = generate_default_sources_content()
         with open(fname, "w") as txtfile:
             txtfile.write(sources_content)
-
 
         return r
 
@@ -225,7 +221,7 @@ class Core:
         return sources
 
     def goto_repo_data_dir(self, repodir_path):
-        paddir = os.path.join(repodir_path,  REPO_DATA_DIR_NAME)
+        paddir = os.path.join(repodir_path, REPO_DATA_DIR_NAME)
         os.makedirs(paddir, exist_ok=True)
         os.chdir(paddir)
 
@@ -283,7 +279,6 @@ class Core:
 
         # use yaml to render the data structures
         print(yaml.safe_dump(tmpdict))
-
 
     @staticmethod
     def make_report(changed_files: List[str]) -> str:
@@ -351,6 +346,7 @@ def get_padname_from_url(url, append=".txt") -> str:
     padname = url.split("/")[-1]
     return f"{padname}{append}"
 
+
 def _create_new_config_file(configfile_path, datadir_path=None):
 
     if os.path.isfile(configfile_path):
@@ -367,6 +363,7 @@ def _create_new_config_file(configfile_path, datadir_path=None):
         txtfile.write(DEFAULT_CONFIGFILE_CONTENT)
 
     print(u.bgreen("✓"), configfile_path, "created")
+
 
 def _check_config_file(configfile_path, print_flag=True):
     # load config file
@@ -386,11 +383,8 @@ def _check_config_file(configfile_path, print_flag=True):
     missing_keys = [key for key in relevant_keys if key not in config_dict]
 
     if missing_keys:
-        missing_keys_str = '\n- '.join(missing_keys)
-        msg = (
-            f"The following keys are missing in {configfile_path}:"
-            f"{missing_keys_str}\n."
-        )
+        missing_keys_str = "\n- ".join(missing_keys)
+        msg = f"The following keys are missing in {configfile_path}:" f"{missing_keys_str}\n."
         raise KeyError(msg)
 
     if print_flag:
@@ -417,6 +411,7 @@ def bootstrap_config(configfile_path=None, datadir_path=None, print_flag=True):
         _check_config_file(configfile_path)
 
     return configfile_path
+
 
 def load_config(configfile_path):
     with open(configfile_path, "r") as txtfile:
@@ -450,13 +445,12 @@ def bootstrap_app(configfile_path=None, datadir_path=None):
 
 def purge_pad_repo(repodir_path, ignore_errors=False):
 
-        checkfile_path = os.path.join(repodir_path, CHECKFILE_NAME)
+    checkfile_path = os.path.join(repodir_path, CHECKFILE_NAME)
 
-        if os.path.exists(checkfile_path):
-            # the special file that it is an directory of this app indicates
-            # that it is safe to delete
-            shutil.rmtree(repodir_path, ignore_errors)
-        elif not ignore_errors:
-            msg = f"The file `{self.checkfile}` is missing. Abort deletion of `{repodir_path}`."
-            raise FileNotFoundError(msg)
-
+    if os.path.exists(checkfile_path):
+        # the special file that it is an directory of this app indicates
+        # that it is safe to delete
+        shutil.rmtree(repodir_path, ignore_errors)
+    elif not ignore_errors:
+        msg = f"The file `{self.checkfile}` is missing. Abort deletion of `{repodir_path}`."
+        raise FileNotFoundError(msg)

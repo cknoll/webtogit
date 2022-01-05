@@ -14,15 +14,13 @@ from ipydex import IPS, activate_ips_on_exception, TracerFactory
 ST = TracerFactory()  # useful for debugging
 # activate_ips_on_exception()
 
-timestr = time.strftime('%Y-%m-%d--%H-%M-%S')
+timestr = time.strftime("%Y-%m-%d--%H-%M-%S")
 
 
 TEST_WORK_DIR = tempfile.mkdtemp(prefix=timestr)
 
 
-TEST_CONFIGFILE_PATH = os.path.abspath(
-    os.path.join(TEST_WORK_DIR, "test-config", "settings.yml")
-)
+TEST_CONFIGFILE_PATH = os.path.abspath(os.path.join(TEST_WORK_DIR, "test-config", "settings.yml"))
 
 
 # noinspection PyPep8Naming
@@ -38,7 +36,6 @@ class PTG_TestCase(unittest.TestCase):
         self._set_workdir()
         self.original_test_data_dir_content = os.listdir(".")
 
-
     def _setup_env(self):
         self._set_workdir()
         # this is necessary because we will call scripts via subprocess
@@ -46,7 +43,6 @@ class PTG_TestCase(unittest.TestCase):
         self.environ[f"{APPNAME}_DATADIR_PATH"] = TEST_WORK_DIR
         self.environ[f"{APPNAME}_CONFIGFILE_PATH"] = TEST_CONFIGFILE_PATH
         self._store_otddc()
-
 
     def setUp(self):
         self._setup_env()
@@ -74,7 +70,6 @@ class PTG_TestCase(unittest.TestCase):
 
 
 class TestCore(PTG_TestCase):
-
     @unittest.expectedFailure
     def test_core1(self):
 
@@ -213,7 +208,6 @@ class TestBootstrap(PTG_TestCase):
         datadir_path = appmod.bootstrap_datadir(configfile_path=TEST_CONFIGFILE_PATH)
         self.assertEqual(datadir_path, TEST_WORK_DIR)
 
-
     def test_bootstrap_new_repo(self):
 
         appmod.bootstrap_config(TEST_CONFIGFILE_PATH)
@@ -224,7 +218,6 @@ class TestBootstrap(PTG_TestCase):
         repos = c._find_repos()
 
         self.assertTrue(dirname in str(repos))
-
 
 
 if __name__ == "__main__":

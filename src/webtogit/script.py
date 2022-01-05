@@ -59,7 +59,6 @@ def main():
         print(u.bred("Error:"), err)
         exit(1)
 
-
     if args.print_config:
         c.print_config()
         exit()
