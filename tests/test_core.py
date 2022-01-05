@@ -6,8 +6,8 @@ import shutil
 import tempfile
 import time
 
-import padstogit as appmod
-from padstogit import Core, APPNAME
+import webtogit as appmod
+from webtogit import Core, APPNAME
 
 from ipydex import IPS, activate_ips_on_exception, TracerFactory
 
@@ -79,11 +79,11 @@ class PTG_TestCase(unittest.TestCase):
 
 
 class TestCore(PTG_TestCase):
-    
+
     @unittest.expectedFailure
     def test_core1(self):
 
-        self.assertEqual(self.c.repo_name, "padstogit-test-repo")
+        self.assertEqual(self.c.repo_name, "webtogit-test-repo")
         self.assertFalse(os.path.exists(self.c.default_repo_dir))
         self.c.init_archive_repo()
         self.assertTrue(os.path.isdir(self.c.default_repo_dir))
@@ -116,10 +116,10 @@ class TestCore(PTG_TestCase):
 
         self.assertEqual(len(sources), 3)
 
-        self.assertEqual(sources[0]["url"], "https://etherpad.wikimedia.org/p/padstogit_testpad1")
-        self.assertEqual(sources[0]["name"], "padstogit_testpad1.txt")
+        self.assertEqual(sources[0]["url"], "https://etherpad.wikimedia.org/p/webtogit_testpad1")
+        self.assertEqual(sources[0]["name"], "webtogit_testpad1.txt")
 
-        self.assertEqual(sources[1]["url"], "https://etherpad.wikimedia.org/p/padstogit_testpad2")
+        self.assertEqual(sources[1]["url"], "https://etherpad.wikimedia.org/p/webtogit_testpad2")
         self.assertEqual(sources[1]["name"], "renamed_testpad.md")
 
     def test_download_and_commit(self):
@@ -140,7 +140,7 @@ class TestCore(PTG_TestCase):
         changed_files = self.c.make_commit(repo_path)
         self.assertEqual(len(changed_files), 0)
 
-        pad_path = os.path.join(repo_path, appmod.REPO_DATA_DIR_NAME, "padstogit_testpad1.txt")
+        pad_path = os.path.join(repo_path, appmod.REPO_DATA_DIR_NAME, "webtogit_testpad1.txt")
         with open(pad_path, "w") as txtfile:
             txtfile.write("unittest!\n")
 

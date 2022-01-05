@@ -7,7 +7,7 @@ import setuptools
 from setuptools import setup, find_packages
 
 
-packagename = "padstogit"
+packagename = "webtogit"
 
 # consider the path of `setup.py` as root directory:
 PROJECTROOT = os.path.dirname(sys.argv[0]) or "."

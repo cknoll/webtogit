@@ -14,7 +14,7 @@ There are the following files:
     ```yaml
   # This is a comment and will be ignored. Same for empty lines.
   
-  # The top YAML-element is a list. Entries are strings or dicts.
+  # The top YAML-element is a list. Its entries are strings or dicts.
   # The following two list entries are just simple literal strings
   # (one url per line):
   
