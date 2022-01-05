@@ -19,16 +19,11 @@ timestr = time.strftime('%Y-%m-%d--%H-%M-%S')
 
 TEST_WORK_DIR = tempfile.mkdtemp(prefix=timestr)
 
-# This is where the persistent test data is stored
-# (not where data is created and manipulated) during tests
-TEST_DATA_STORAGE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "test-data"))
 
 TEST_CONFIGFILE_PATH = os.path.abspath(
     os.path.join(TEST_WORK_DIR, "test-config", "settings.yml")
 )
 
-
-# TEST_SOURCES = os.path.join(TEST_DATA_STORAGE_DIR, "sources.yml")  #!!
 
 # noinspection PyPep8Naming
 class PTG_TestCase(unittest.TestCase):
@@ -181,6 +176,11 @@ class TestCommandLine(PTG_TestCase):
 
         self.assertEqual(res.returncode, 0)
 
+    def test_run_bootstrap_repo(self):
+        res = run_command([APPNAME, "--bootstrap"], self.environ)
+
+        self.assertEqual(res.returncode, 0)
+
 
 class TestBootstrap(PTG_TestCase):
     def setUp(self):
@@ -212,6 +212,18 @@ class TestBootstrap(PTG_TestCase):
 
         datadir_path = appmod.bootstrap_datadir(configfile_path=TEST_CONFIGFILE_PATH)
         self.assertEqual(datadir_path, TEST_WORK_DIR)
+
+
+    def test_bootstrap_new_repo(self):
+
+        appmod.bootstrap_config(TEST_CONFIGFILE_PATH)
+        c = Core()
+
+        dirname = "test_repo_2"
+        c.init_archive_repo(dirname)
+        repos = c._find_repos()
+
+        self.assertTrue(dirname in str(repos))
 
 
 
