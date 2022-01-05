@@ -4,6 +4,7 @@ import requests
 from typing import List
 import pathlib
 import textwrap
+import logging
 
 import git
 import yaml

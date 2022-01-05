@@ -29,6 +29,11 @@ def main():
         action="store_true",
     )
     parser.add_argument(
+        "--bootstrap-repo",
+        help=f"Initialize a new (additional) repo.",
+        metavar="reponame",
+    )
+    parser.add_argument(
         "--configfile-path",
         help=f"Set the path to the configuration directory (containing settings.yml).",
     )
@@ -39,7 +44,7 @@ def main():
 
     args = parser.parse_args()
 
-
+    IPS()
     if args.bootstrap_config:
         core.bootstrap_config(configfile_path=args.configfile_path)
         exit()
