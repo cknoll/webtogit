@@ -48,8 +48,8 @@ class InfoFilter(logging.Filter):
         return rec.levelno in (logging.DEBUG, logging.INFO)
 
 
-logger = logging.getLogger()
-logging.getLogger("git").setLevel(logging.WARNING)
+logger = logging.getLogger(APPNAME)
+
 
 logger.setLevel(logging.DEBUG)
 
@@ -62,7 +62,7 @@ h2.setLevel(logging.WARNING)
 logger.addHandler(h1)
 logger.addHandler(h2)
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname)s:%(message)s')
 
 
 def generate_default_configfile_content(datadir_path: str) -> str:
@@ -165,7 +165,7 @@ class Core:
 
         Handle the following cases:
         - dir exists
-            - valid repo -> logging.info status
+            - valid repo -> logger.info status
             - no or invalid repo -> raise error
         - dir does not exist -> create dir and init repo
 
@@ -174,7 +174,7 @@ class Core:
 
         repodir_path = os.path.join(self.datadir_path, repo_name)
         if repodir_path in self.repo_paths:
-            logging.info(f"{repodir_path} is already a valid repo. Nothing to do.")
+            logger.info(f"{repodir_path} is already a valid repo. Nothing to do.")
             _check_archive_repo(repodir_path)
             return git.Repo.init(repodir_path)
         else:
@@ -223,7 +223,8 @@ class Core:
 
         return r
 
-    def load_webdoc_sources(self, repo_dir: str) -> list:
+    @staticmethod
+    def load_webdoc_sources(repo_dir: str) -> list:
 
         sources_path = os.path.join(repo_dir, f"{APPNAME}-sources.yml")
 
@@ -256,15 +257,15 @@ class Core:
                 raise TypeError(f"unexpexted:{type(s)}")
         return sources
 
-    def goto_repo_data_dir(self, repodir_path):
+    @staticmethod
+    def goto_repo_data_dir(repodir_path):
         paddir = os.path.join(repodir_path, REPO_DATA_DIR_NAME)
         os.makedirs(paddir, exist_ok=True)
         os.chdir(paddir)
 
-    def download_pad_contents(self, repo_dir: str):
+    def download_source_contents(self, repo_dir: str):
         """
-        create and change to the directory where the pads are actually placed
-        (to avoind name collissions)
+        iterate over sources dict, download url and save result in file insisde the repo
         """
         sources = self.load_webdoc_sources(repo_dir)
 
@@ -330,17 +331,19 @@ class Core:
         if print_flag:
             self.print_config()
 
+        testfile = f"{APPNAME}-sources.yml"
+
         for name in content:
             full_path = os.path.join(self.datadir_path, name)
             if not os.path.isdir(full_path):
                 continue
-            if not os.path.isfile(os.path.join(full_path, f".{APPNAME}")):
+            if not os.path.isfile(os.path.join(full_path, testfile)):
                 msg = (
-                    f"file .{APPNAME} is not present in {full_path} "
+                    f"file {testfile} is not present in {full_path} "
                     f"-> do not consider it as relevant repo."
                 )
                 if print_flag:
-                    logging.info(msg)
+                    logger.info(msg)
                 continue
 
             self.handle_repo(full_path, print_flag)
@@ -356,14 +359,12 @@ class Core:
         4. return and print a report of what as changed
         """
 
-        # obsolete self.get_or_create_repo(repodir_path)
-        sources = self.load_webdoc_sources(repodir_path)
-        self.download_pad_contents(repodir_path)
+        self.download_source_contents(repodir_path)
         changed_files = self.make_commit(repodir_path)
 
         if print_flag:
-            logging.info(f"\nrepo {u.bright(repodir_path)}:")
-            logging.info(self.make_report(changed_files))
+            logger.info(f"\nrepo {u.bright(repodir_path)}:")
+            logger.info(self.make_report(changed_files))
 
         return changed_files
 
@@ -398,7 +399,7 @@ def _create_new_config_file(configfile_path, datadir_path=None):
     with open(configfile_path, "w", encoding="utf8") as txtfile:
         txtfile.write(DEFAULT_CONFIGFILE_CONTENT)
 
-    logging.info(f'{u.bgreen("✓")} {configfile_path} created')
+    logger.info(f'{u.bgreen("✓")} {configfile_path} created')
 
 
 def _check_config_file(configfile_path, print_flag=True):
@@ -424,7 +425,7 @@ def _check_config_file(configfile_path, print_flag=True):
         raise KeyError(msg)
 
     if print_flag:
-        logging.info(f'{u.bgreen("✓")} config file check passed: {configfile_path}')
+        logger.info(f'{u.bgreen("✓")} config file check passed: {configfile_path}')
 
 
 def _check_archive_repo(repodir_path: str) -> bool:
@@ -494,7 +495,7 @@ def bootstrap_config(configfile_path=None, datadir_path=None):
 
     else:
         _check_config_file(configfile_path)
-        logging.info("Configuration was already bootstrapped. Nothing done.")
+        logger.info("Configuration was already bootstrapped. Nothing done.")
 
     return configfile_path
 
@@ -527,15 +528,15 @@ def bootstrap_datadir(configfile_path=None, datadir_path=None, omit_config_check
     if not os.path.isdir(default_repo_path):
         c.init_archive_repo(config_dict["default_repo_name"])
     else:
-        logging.info("Datadir was already bootstrapped. Nothing done.")
-        logging.info(f"Default repo found: {default_repo_path}")
+        logger.info("Datadir was already bootstrapped. Nothing done.")
+        logger.info(f"Default repo found: {default_repo_path}")
     repos = c.find_repos()
 
     assert len(repos) > 0
 
     repo_str = "\n -".join(repos)
 
-    logging.info(f"The following repos where found:\n{repo_str}\n")
+    logger.info(f"The following repos where found:\n{repo_str}\n")
 
     return c.datadir_path
 

@@ -13,10 +13,12 @@ import logging
 import webtogit as appmod
 from webtogit import Core, APPNAME
 
+# useful for debugging:
 from ipydex import IPS, activate_ips_on_exception, TracerFactory
 
-ST = TracerFactory()  # useful for debugging
+ST = TracerFactory()
 # activate_ips_on_exception()
+DEBUG = False
 
 timestr = time.strftime("%Y-%m-%d--%H-%M-%S")
 
@@ -61,6 +63,10 @@ class Abstract_WTG_TestCase(unittest.TestCase):
         logging.disable(logging.NOTSET)
 
     def setUp(self):
+
+        if DEBUG:
+            print(f"--------- {self.__class__.__name__}.{self._testMethodName} --------------")
+
         self._setup_env()
         os.environ.update(self.environ)
 
@@ -86,36 +92,8 @@ class Abstract_WTG_TestCase(unittest.TestCase):
 class TestCore(Abstract_WTG_TestCase):
     def setUp(self):
         super().setUp()
-        appmod.bootstrap_app(configfile_path=TEST_CONFIGFILE_PATH)
+        self._bootstrap_app()
         self.c = Core()
-
-    @unittest.expectedFailure
-    def test_core1(self):
-
-        self.assertEqual(self.c.repo_name, "webtogit-test-repo")
-        self.assertFalse(os.path.exists(self.c.default_repo_dir))
-        self.c.init_archive_repo()
-        self.assertTrue(os.path.isdir(self.c.default_repo_dir))
-        self.assertTrue(os.path.isfile(self.c.checkfile))
-        self.assertTrue(os.path.isdir(os.path.join(self.c.default_repo_dir, ".git")))
-
-        self.assertRaises(FileExistsError, self.c.init_archive_repo)
-
-        self.c.purge_pad_repo()
-        self.assertFalse(os.path.exists(self.c.default_repo_dir))
-
-        self.assertRaises(FileNotFoundError, self.c.purge_pad_repo)
-
-        # ensure that the directory is only deleted if the special file is present
-        self.c.init_archive_repo()
-        os.rename(self.c.checkfile, f"{self.c.checkfile}_backup")
-        self.assertRaises(FileNotFoundError, self.c.purge_pad_repo)
-        self.assertTrue(os.path.isdir(self.c.default_repo_dir))
-
-        # now delete the repo
-        os.rename(f"{self.c.checkfile}_backup", self.c.checkfile)
-        self.c.purge_pad_repo()
-        self.assertFalse(os.path.exists(self.c.default_repo_dir))
 
     def test_load_sources1(self):
 
@@ -134,7 +112,7 @@ class TestCore(Abstract_WTG_TestCase):
     def test_download_and_commit(self):
 
         repo_path = self.c.repo_paths[0]
-        self.c.download_pad_contents(repo_path)
+        self.c.download_source_contents(repo_path)
 
         res_txt = glob.glob(os.path.join(self.c.repo_paths[0], appmod.REPO_DATA_DIR_NAME, "*.txt"))
         res_md = glob.glob(os.path.join(self.c.repo_paths[0], appmod.REPO_DATA_DIR_NAME, "*.md"))
@@ -157,7 +135,8 @@ class TestCore(Abstract_WTG_TestCase):
         self.assertEqual(len(changed_files), 1)
 
     def test_handle_all_repos(self):
-        res = self.c.handle_all_repos()
+        res = self.c.handle_all_repos(print_flag=False)
+        # TODO!!: add actual test
 
 
 def run_command(cmd, env: dict, print_full_cmd=False) -> subprocess.CompletedProcess:
@@ -220,8 +199,10 @@ class TestBootstrap(Abstract_WTG_TestCase):
         self.environ = {f"{APPNAME}_DATADIR_PATH": TEST_WORK_DIR}
         os.environ.update(self.environ)
         self._store_otddc()
+        logging.disable(logging.CRITICAL)
 
     def tearDown(self):
+        logging.disable(logging.NOTSET)
         os.remove(TEST_CONFIGFILE_PATH)
         self._restore_otddc()
 
