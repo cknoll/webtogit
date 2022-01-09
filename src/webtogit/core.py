@@ -103,7 +103,7 @@ def generate_default_sources_content():
 CHECKFILE_NAME = f".{APPNAME}"
 
 # name of the directory inside the repo which contains the actual data
-REPO_DATA_DIR_NAME = "pads"
+REPO_DATA_DIR_NAME = "content"
 
 
 class ObsoleteFunctionError(RuntimeError):
@@ -293,7 +293,7 @@ class Core:
         os.chdir(repodir_path)
         r = self.get_repo(repodir_path)
 
-        r.git.add("pads/")
+        r.git.add(REPO_DATA_DIR_NAME)
         diff_objects = r.index.diff(r.head.commit)
 
         changedFiles = [do.a_path for do in diff_objects]
@@ -545,16 +545,3 @@ def bootstrap_datadir(configfile_path=None, datadir_path=None, omit_config_check
 def bootstrap_app(configfile_path=None, datadir_path=None):
     bootstrap_config(configfile_path=configfile_path, datadir_path=datadir_path)
     bootstrap_datadir(configfile_path=configfile_path, datadir_path=datadir_path, omit_config_check=True)
-
-
-def purge_pad_repo(repodir_path, ignore_errors=False):
-
-    checkfile_path = os.path.join(repodir_path, CHECKFILE_NAME)
-
-    if os.path.exists(checkfile_path):
-        # the special file that it is an directory of this app indicates
-        # that it is safe to delete
-        shutil.rmtree(repodir_path, ignore_errors)
-    elif not ignore_errors:
-        msg = f"The file `{self.checkfile}` is missing. Abort deletion of `{repodir_path}`."
-        raise FileNotFoundError(msg)
