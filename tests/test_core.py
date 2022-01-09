@@ -168,6 +168,10 @@ def run_command(cmd, env: dict, print_full_cmd=False) -> subprocess.CompletedPro
 
 class TestCommandLine(Abstract_WTG_TestCase):
     def test_print_config(self):
+        # first, run without any bootstrapping:
+        res = run_command([APPNAME, "--print-config"], self.environ)
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("`--bootstrap` first", res.stderr)
 
         res1 = run_command([APPNAME, "--bootstrap-config"], self.environ)
         self.assertEqual(res1.returncode, 0)

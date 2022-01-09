@@ -137,7 +137,11 @@ class Core:
 
     def load_settings(self):
 
-        self.config = load_config(self.configfile_path)
+        try:
+            self.config = load_config(self.configfile_path)
+        except FileNotFoundError as err:
+            err_not_bootstrapped_stage1(self.configfile_path)
+            exit(2)  # do not use 1 here to discriminate from uncached exception
 
     def find_repos(self) -> tuple:
 
@@ -545,3 +549,20 @@ def bootstrap_datadir(configfile_path=None, datadir_path=None, omit_config_check
 def bootstrap_app(configfile_path=None, datadir_path=None):
     bootstrap_config(configfile_path=configfile_path, datadir_path=datadir_path)
     bootstrap_datadir(configfile_path=configfile_path, datadir_path=datadir_path, omit_config_check=True)
+
+
+def print_config(configfile_path=None, datadir_path=None):
+    c = Core(configfile_path, datadir_path)
+    c.print_config()
+
+
+def err_not_bootstrapped_stage1(path):
+    msg = f"{APPNAME} is not correctly bootstrapped: configuration file {path} not found.\n" \
+            "run with option `--bootstrap` first."
+    logger.error(f'{u.bred("Error:")} {msg}')
+
+
+def err_not_bootstrapped_stage2(path):
+    msg = f"{APPNAME} is not correctly bootstrapped: data directory {path} not found.\n" \
+            "run with option `--bootstrap` first."
+    logger.error(f'{u.bred("Error:")} {msg}')

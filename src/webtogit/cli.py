@@ -54,16 +54,15 @@ def main():
         core.bootstrap_app(configfile_path=args.configfile_path, datadir_path=args.datadir_path)
         exit()
 
-    try:
-        c = core.Core(configfile_path=args.configfile_path, datadir_path=args.datadir_path)
-    except FileNotFoundError as err:
-        logging.error(u.bred("Error:"), err)
-        exit(1)
-        return  # make pycharm happy
+    if args.bootstrap_repo:
+        raise NotImplementedError("Bootstrapping of a new repository, additionally to the default one")
+        exit()
 
     if args.print_config:
-        c.print_config()
+        core.print_config(configfile_path=args.configfile_path, datadir_path=args.datadir_path)
         exit()
+
+    # this is executed if no argument is passed
 
     repo_path = c.repo_paths[0]
     c.handle_repo(repo_path)
