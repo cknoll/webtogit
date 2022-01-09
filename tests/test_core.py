@@ -1,10 +1,14 @@
+import sys
+from io import StringIO
 import unittest
 import os
+from contextlib import contextmanager
 import glob
 import subprocess
 import shutil
 import tempfile
 import time
+import logging
 
 import webtogit as appmod
 from webtogit import Core, APPNAME
@@ -25,7 +29,8 @@ TEST_CONFIGFILE_PATH = os.path.abspath(os.path.join(TEST_WORK_DIR, "test-config"
 
 # noinspection PyPep8Naming
 class Abstract_WTG_TestCase(unittest.TestCase):
-    def _set_workdir(self):
+    @staticmethod
+    def _set_workdir():
 
         # the unit test framework seems to mess up the current working dir
         # -> we better set it explicitly
@@ -48,6 +53,12 @@ class Abstract_WTG_TestCase(unittest.TestCase):
             f"{APPNAME}_CONFIGFILE_PATH": TEST_CONFIGFILE_PATH
         }
         self._store_otddc()
+
+    @staticmethod
+    def _bootstrap_app():
+        logging.disable(logging.CRITICAL)
+        appmod.bootstrap_app(configfile_path=TEST_CONFIGFILE_PATH)
+        logging.disable(logging.NOTSET)
 
     def setUp(self):
         self._setup_env()
@@ -187,6 +198,9 @@ class TestCommandLine(Abstract_WTG_TestCase):
         self.assertNotIn("None", res2.stdout)
 
     def test_run_main(self):
+
+        self._bootstrap_app()
+
         res = run_command([APPNAME], self.environ)
 
         self.assertEqual(res.returncode, 0)

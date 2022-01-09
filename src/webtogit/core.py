@@ -225,7 +225,7 @@ class Core:
 
     def load_webdoc_sources(self, repo_dir: str) -> list:
 
-        sources_path = os.path.join(repo_dir, "sources.yml")
+        sources_path = os.path.join(repo_dir, f"{APPNAME}-sources.yml")
 
         assert os.path.isfile(sources_path)
 
