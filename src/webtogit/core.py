@@ -49,6 +49,7 @@ class InfoFilter(logging.Filter):
 
 
 logger = logging.getLogger(APPNAME)
+logger.propagate = False
 
 
 logger.setLevel(logging.DEBUG)
