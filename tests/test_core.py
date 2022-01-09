@@ -24,7 +24,7 @@ TEST_CONFIGFILE_PATH = os.path.abspath(os.path.join(TEST_WORK_DIR, "test-config"
 
 
 # noinspection PyPep8Naming
-class PTG_TestCase(unittest.TestCase):
+class Abstract_WTG_TestCase(unittest.TestCase):
     def _set_workdir(self):
 
         # the unit test framework seems to mess up the current working dir
@@ -32,6 +32,10 @@ class PTG_TestCase(unittest.TestCase):
         os.chdir(TEST_WORK_DIR)
 
     def _store_otddc(self):
+        """
+        Store original test data dir content
+        :return:
+        """
 
         self._set_workdir()
         self.original_test_data_dir_content = os.listdir(".")
@@ -39,16 +43,15 @@ class PTG_TestCase(unittest.TestCase):
     def _setup_env(self):
         self._set_workdir()
         # this is necessary because we will call scripts via subprocess
-        self.environ = {}
-        self.environ[f"{APPNAME}_DATADIR_PATH"] = TEST_WORK_DIR
-        self.environ[f"{APPNAME}_CONFIGFILE_PATH"] = TEST_CONFIGFILE_PATH
+        self.environ = {
+            f"{APPNAME}_DATADIR_PATH": TEST_WORK_DIR,
+            f"{APPNAME}_CONFIGFILE_PATH": TEST_CONFIGFILE_PATH
+        }
         self._store_otddc()
 
     def setUp(self):
         self._setup_env()
         os.environ.update(self.environ)
-        appmod.bootstrap_app(configfile_path=TEST_CONFIGFILE_PATH)
-        self.c = Core()
 
     def _restore_otddc(self):
 
@@ -69,7 +72,12 @@ class PTG_TestCase(unittest.TestCase):
         self._restore_otddc()
 
 
-class TestCore(PTG_TestCase):
+class TestCore(Abstract_WTG_TestCase):
+    def setUp(self):
+        super().setUp()
+        appmod.bootstrap_app(configfile_path=TEST_CONFIGFILE_PATH)
+        self.c = Core()
+
     @unittest.expectedFailure
     def test_core1(self):
 
@@ -141,22 +149,34 @@ class TestCore(PTG_TestCase):
         res = self.c.handle_all_repos()
 
 
-def run_command(cmd, env: dict) -> subprocess.CompletedProcess:
+def run_command(cmd, env: dict, print_full_cmd=False) -> subprocess.CompletedProcess:
+    """
 
+    :param cmd:
+    :param env:
+    :param print_full_cmd:  boolean flag; usefull to debug that exact command (with that env)
+    :return:
+    """
     complete_env = {**os.environ, "NO_IPS_EXCEPTHOOK": "True", **env}
 
     if isinstance(cmd, str):
         cmd = cmd.split(" ")
     assert isinstance(cmd, list)
 
+    tokes = [f'{key}="{value}";' for key, value in complete_env.items()] + cmd
+    full_command = ' '.join(tokes)
+    if print_full_cmd:
+        print(f"→ CMD: {full_command}")
+
     res = subprocess.run(cmd, capture_output=True, env=complete_env)
     res.stdout = res.stdout.decode("utf8")
     res.stderr = res.stderr.decode("utf8")
+    res.full_command = full_command
 
     return res
 
 
-class TestCommandLine(PTG_TestCase):
+class TestCommandLine(Abstract_WTG_TestCase):
     def test_print_config(self):
 
         res1 = run_command([APPNAME, "--bootstrap-config"], self.environ)
@@ -173,14 +193,17 @@ class TestCommandLine(PTG_TestCase):
 
     def test_run_bootstrap_repo(self):
         res = run_command([APPNAME, "--bootstrap"], self.environ)
-
         self.assertEqual(res.returncode, 0)
 
+        # the app is already bootstrapped
+        res = run_command([APPNAME, "--bootstrap"], self.environ)
+        self.assertEqual(res.returncode, 0)
+        self.assertIn("already bootstrapped", res.stdout)
 
-class TestBootstrap(PTG_TestCase):
+
+class TestBootstrap(Abstract_WTG_TestCase):
     def setUp(self):
-        self.environ = {}
-        self.environ[f"{APPNAME}_DATADIR_PATH"] = TEST_WORK_DIR
+        self.environ = {f"{APPNAME}_DATADIR_PATH": TEST_WORK_DIR}
         os.environ.update(self.environ)
         self._store_otddc()
 
@@ -215,7 +238,7 @@ class TestBootstrap(PTG_TestCase):
 
         dirname = "test_repo_2"
         c.init_archive_repo(dirname)
-        repos = c._find_repos()
+        repos = c.find_repos()
 
         self.assertTrue(dirname in str(repos))
 

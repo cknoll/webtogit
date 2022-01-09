@@ -3,11 +3,12 @@ Command line interface for webtogit package
 """
 
 import argparse
+import logging
 from ipydex import IPS, activate_ips_on_exception, TracerFactory
 from . import core, util as u
 
-ST = TracerFactory()
 activate_ips_on_exception()
+ST = TracerFactory()
 
 
 def main():
@@ -44,7 +45,7 @@ def main():
 
     args = parser.parse_args()
 
-    IPS()
+    # IPS()
     if args.bootstrap_config:
         core.bootstrap_config(configfile_path=args.configfile_path)
         exit()
@@ -56,8 +57,9 @@ def main():
     try:
         c = core.Core(configfile_path=args.configfile_path, datadir_path=args.datadir_path)
     except FileNotFoundError as err:
-        print(u.bred("Error:"), err)
+        logging.error(u.bred("Error:"), err)
         exit(1)
+        return  # make pycharm happy
 
     if args.print_config:
         c.print_config()
@@ -68,4 +70,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # this block is called by a command like `python -m package.cli ...`
+    # but not by the entry_points defined in setup.py
     main()

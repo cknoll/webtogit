@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 import requests
 from typing import List
@@ -14,10 +15,11 @@ from ipydex import IPS, activate_ips_on_exception, TracerFactory
 from . import util as u
 
 
+# debugging facilities
+activate_ips_on_exception()
 ST = TracerFactory()
 
 activate_ips_on_exception()
-
 
 safty_explanation = """
 # The presence (not the content) of this file is checked before the repo is purged.
@@ -37,6 +39,30 @@ APPNAME = "webtogit"
 
 DEFAULT_DATADIR_PATH = appdirs.user_data_dir(appname=APPNAME)
 DEFAULT_CONFIGFILE_PATH = os.path.join(appdirs.user_config_dir(appname=APPNAME), "settings.yml")
+
+
+# Initialize logging based on https://stackoverflow.com/a/16066513/333403
+
+class InfoFilter(logging.Filter):
+    def filter(self, rec):
+        return rec.levelno in (logging.DEBUG, logging.INFO)
+
+
+logger = logging.getLogger()
+logging.getLogger("git").setLevel(logging.WARNING)
+
+logger.setLevel(logging.DEBUG)
+
+h1 = logging.StreamHandler(sys.stdout)
+h1.setLevel(logging.DEBUG)
+h1.addFilter(InfoFilter())
+h2 = logging.StreamHandler()
+h2.setLevel(logging.WARNING)
+
+logger.addHandler(h1)
+logger.addHandler(h2)
+
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 
 def generate_default_configfile_content(datadir_path: str) -> str:
@@ -90,12 +116,8 @@ class Core:
 
     def __init__(self, configfile_path=None, datadir_path=None):
 
-        self.datadir_path = (
-            datadir_path or os.getenv(f"{APPNAME}_DATADIR_PATH") or DEFAULT_DATADIR_PATH
-        )
-        self.configfile_path = (
-            configfile_path or os.getenv(f"{APPNAME}_CONFIGFILE_PATH") or DEFAULT_CONFIGFILE_PATH
-        )
+        self.datadir_path = resolve_path_arg(datadir_path, "DATA")
+        self.configfile_path = resolve_path_arg(configfile_path, "CONFIG")
         self.configdir = os.path.split(self.configfile_path)[0]
 
         self.config = None
@@ -104,7 +126,7 @@ class Core:
         self.load_settings()
 
         self.repo_paths = None
-        self._find_repos()
+        self.find_repos()
 
     def _ensure_existing_dirs(self):
 
@@ -116,7 +138,7 @@ class Core:
 
         self.config = load_config(self.configfile_path)
 
-    def _find_repos(self) -> tuple:
+    def find_repos(self) -> tuple:
 
         os.chdir(self.datadir_path)
         dircontent = os.listdir("./")
@@ -141,9 +163,9 @@ class Core:
     def init_archive_repo(self, repo_name: str) -> git.Repo:
         """
 
-        Handle the following possibilities:
+        Handle the following cases:
         - dir exists
-            - valid repo -> print status
+            - valid repo -> logging.info status
             - no or invalid repo -> raise error
         - dir does not exist -> create dir and init repo
 
@@ -152,10 +174,24 @@ class Core:
 
         repodir_path = os.path.join(self.datadir_path, repo_name)
         if repodir_path in self.repo_paths:
-            print(f"{repodir_path} is already a valid repo. Nothing to do.")
+            logging.info(f"{repodir_path} is already a valid repo. Nothing to do.")
+            _check_archive_repo(repodir_path)
+            return git.Repo.init(repodir_path)
+        else:
+            return self._init_archive_repo(repodir_path)
+
+    def _init_archive_repo(self, repodir_path: str) -> git.Repo:
+        """
+        Handle the following cases:
+        - dir exists -> error
+        - dir does not exist -> create dir and init repo
+
+        :param repodir_path:
+        :return:
+        """
 
         if os.path.exists(repodir_path):
-            raise FileExistsError(f"{repodir_path} already exists. Please move dir and retry.")
+            raise FileExistsError(f"{repodir_path} already exists. This si")
 
         r = git.Repo.init(repodir_path)
         os.chdir(repodir_path)
@@ -179,8 +215,8 @@ class Core:
 
         r.index.commit("initial commit")
 
-        # sources.yml is not (automatically) part of the repo
-        fname = "sources.yml"
+        # {APPNAME}-sources.yml is not (automatically) part of the repo
+        fname = f"{APPNAME}-sources.yml"
         sources_content = generate_default_sources_content()
         with open(fname, "w") as txtfile:
             txtfile.write(sources_content)
@@ -304,7 +340,7 @@ class Core:
                     f"-> do not consider it as relevant repo."
                 )
                 if print_flag:
-                    print(msg)
+                    logging.info(msg)
                 continue
 
             self.handle_repo(full_path, print_flag)
@@ -326,8 +362,8 @@ class Core:
         changed_files = self.make_commit(repodir_path)
 
         if print_flag:
-            print(f"\nrepo {u.bright(repodir_path)}:")
-            print(self.make_report(changed_files))
+            logging.info(f"\nrepo {u.bright(repodir_path)}:")
+            logging.info(self.make_report(changed_files))
 
         return changed_files
 
@@ -362,7 +398,7 @@ def _create_new_config_file(configfile_path, datadir_path=None):
     with open(configfile_path, "w", encoding="utf8") as txtfile:
         txtfile.write(DEFAULT_CONFIGFILE_CONTENT)
 
-    print(u.bgreen("✓"), configfile_path, "created")
+    logging.info(f'{u.bgreen("✓")} {configfile_path} created')
 
 
 def _check_config_file(configfile_path, print_flag=True):
@@ -388,27 +424,77 @@ def _check_config_file(configfile_path, print_flag=True):
         raise KeyError(msg)
 
     if print_flag:
-        print(u.bgreen("✓"), "config file check passed:", configfile_path)
+        logging.info(f'{u.bgreen("✓")} config file check passed: {configfile_path}')
 
 
-def bootstrap_config(configfile_path=None, datadir_path=None, print_flag=True):
+def _check_archive_repo(repodir_path: str) -> bool:
     """
-    :param configfile_path:     path to where the config file should be located
+    Check if provided archive repo has the expected structure
+
+    :param repodir_path:
+
+    :return:    True (or raise an error)
+    """
+
+    if not os.path.isdir(repodir_path):
+        raise FileNotFoundError(repodir_path)
+
+    path1 = os.path.join(repodir_path, f"{APPNAME}-sources.yml")
+
+    if not os.path.isfile(path1):
+        raise FileNotFoundError(path1)
+
+    # this will raise an error if the repo is not valid
+    test_repo = git.Repo.init(repodir_path)
+    assert test_repo is not None
+
+    return True
+
+
+def resolve_path_arg(path: str, type_: str) -> str:
+    """
+    Handle the `None`-case. Leave unchanged else
+
+    :param path:    path to handle or None
+    :param type_:   one of "CONFIG" or "DATA"
+
+    :return:
+    """
+    if type_ == "CONFIG":
+        if path is None:
+            path = os.getenv(f"{APPNAME}_CONFIGFILE_PATH") or DEFAULT_CONFIGFILE_PATH
+
+        return path
+    elif type_ == "DATA":
+        if path is None:
+            path = os.getenv(f"{APPNAME}_DATADIR_PATH") or DEFAULT_DATADIR_PATH
+
+        return path
+    else:
+        raise ValueError(f"Unkown type-string: {type_}")
+
+
+def bootstrap_config(configfile_path=None, datadir_path=None):
+    """
+    Try to load configfile. If it does not exist: create. Anyway: check
+
+    :param configfile_path:     path to where the config file should be located (optional)
     :param datadir_path:        path which is written inside the config file
                                 (if it is newly created)
     """
 
-    if configfile_path is None:
-        configfile_path = os.getenv(f"{APPNAME}_CONFIGFILE_PATH") or DEFAULT_CONFIGFILE_PATH
+    configfile_path = resolve_path_arg(configfile_path, "CONFIG")
 
     if not os.path.isfile(configfile_path):
         # create new config file
         _create_new_config_file(configfile_path, datadir_path)
         # call this function again to perform the check
-        return bootstrap_config(configfile_path=configfile_path, print_flag=print_flag)
+
+        _check_config_file(configfile_path)
 
     else:
         _check_config_file(configfile_path)
+        logging.info("Configuration was already bootstrapped. Nothing done.")
 
     return configfile_path
 
@@ -420,27 +506,43 @@ def load_config(configfile_path):
     return config_dict
 
 
-def bootstrap_datadir(configfile_path=None, datadir_path=None):
-    _check_config_file(configfile_path=configfile_path)
+def bootstrap_datadir(configfile_path=None, datadir_path=None, omit_config_check=False):
+    """
+    Try to check datadir. If it does not exist: create. Anyway: check
+
+    :param configfile_path:
+    :param datadir_path:
+    :param omit_config_check:   Boolean flag to avoid unnecessary checking
+    :return:
+    """
+    configfile_path = resolve_path_arg(configfile_path, "CONFIG")
+
+    if not omit_config_check:
+        _check_config_file(configfile_path=configfile_path)
     config_dict = load_config(configfile_path)
 
     c = Core(configfile_path=configfile_path, datadir_path=datadir_path)
 
-    c.init_archive_repo(config_dict["default_repo_name"])
-    repos = c._find_repos()
+    default_repo_path = os.path.join(c.datadir_path, config_dict["default_repo_name"])
+    if not os.path.isdir(default_repo_path):
+        c.init_archive_repo(config_dict["default_repo_name"])
+    else:
+        logging.info("Datadir was already bootstrapped. Nothing done.")
+        logging.info(f"Default repo found: {default_repo_path}")
+    repos = c.find_repos()
 
     assert len(repos) > 0
 
     repo_str = "\n -".join(repos)
 
-    print(f"The following repos where found:\n{repo_str}\n")
+    logging.info(f"The following repos where found:\n{repo_str}\n")
 
     return c.datadir_path
 
 
 def bootstrap_app(configfile_path=None, datadir_path=None):
     bootstrap_config(configfile_path=configfile_path, datadir_path=datadir_path)
-    bootstrap_datadir(configfile_path=configfile_path, datadir_path=datadir_path)
+    bootstrap_datadir(configfile_path=configfile_path, datadir_path=datadir_path, omit_config_check=True)
 
 
 def purge_pad_repo(repodir_path, ignore_errors=False):

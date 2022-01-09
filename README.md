@@ -11,15 +11,15 @@ WebToGit comes with some builtin bootstrapping capabilities. It automatically cr
 ```
 $HOME
 ├── <datapath>/webtogit
-│   ├── default-archive
+│   ├── archived-webdocs
 │   │   ├── .git/
 │   │   ├── webtogit-sources.yml
 │   │   ├── README.md
 │   │   └── content
 │   │       ├── pad1.txt
 │   │       ├── page2.html
-│   │       └── ...
-
+│   │       └── …
+…   …
 ```
 
 The file `webtogit-sources.yml` contains the URLs which should be saved to the repo (inside `content`), see details below. For WebToGit to be useful `webtogit-sources.yml` must be edited. This file also serves as a marker: if it is present the `webtogit` command is allowed to modify or delete the repo. The file `README.md` contains some generic information to explain the purpose of this repository.
