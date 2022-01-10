@@ -18,7 +18,7 @@ from ipydex import IPS, activate_ips_on_exception, TracerFactory
 
 ST = TracerFactory()
 # activate_ips_on_exception()
-DEBUG = False
+DEBUG = True
 
 timestr = time.strftime("%Y-%m-%d--%H-%M-%S")
 
