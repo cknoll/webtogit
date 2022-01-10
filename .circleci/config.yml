@@ -4,6 +4,8 @@ jobs:
   build:
     docker:
       - image: circleci/python:3.8
+    environment:
+      NO_IPS_EXCEPTHOOK: True
     steps:
       - checkout
       - run: pip install -r requirements.txt
