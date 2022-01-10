@@ -1,4 +1,5 @@
 ipydex
 pyyaml
 gitpython
+colorama
 appdirs
