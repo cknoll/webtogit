@@ -49,7 +49,7 @@ def main():
             f"default: {core.DEFAULT_REPO_NAME}"
         ),
         default=core.DEFAULT_REPO_NAME,
-        nargs='?',
+        nargs="?",
     )
     parser.add_argument(
         "--update-all-repos",
@@ -68,7 +68,9 @@ def main():
         exit()
 
     elif args.bootstrap_repo:
-        raise NotImplementedError("Bootstrapping of a new repository, additionally to the default one")
+        raise NotImplementedError(
+            "Bootstrapping of a new repository, additionally to the default one"
+        )
         exit()
 
     elif args.print_config:

@@ -44,6 +44,7 @@ DEFAULT_CONFIGFILE_PATH = os.path.join(appdirs.user_config_dir(appname=APPNAME),
 
 # Initialize logging based on https://stackoverflow.com/a/16066513/333403
 
+
 class InfoFilter(logging.Filter):
     def filter(self, rec):
         return rec.levelno in (logging.DEBUG, logging.INFO)
@@ -64,7 +65,7 @@ h2.setLevel(logging.WARNING)
 logger.addHandler(h1)
 logger.addHandler(h2)
 
-logging.basicConfig(format='%(levelname)s:%(message)s')
+logging.basicConfig(format="%(levelname)s:%(message)s")
 
 
 def generate_default_configfile_content(datadir_path: str) -> str:
@@ -379,9 +380,6 @@ class Core:
         return changed_files
 
 
-# https://etherpad.wikimedia.org/p/webtogit_testpad1/export/txt
-
-
 def get_padname_from_url(url, append=".txt") -> str:
     if not url.startswith("http"):
         raise ValueError(f"invalid url: {url}")
@@ -553,7 +551,9 @@ def bootstrap_datadir(configfile_path=None, datadir_path=None, omit_config_check
 
 def bootstrap_app(configfile_path=None, datadir_path=None):
     bootstrap_config(configfile_path=configfile_path, datadir_path=datadir_path)
-    bootstrap_datadir(configfile_path=configfile_path, datadir_path=datadir_path, omit_config_check=True)
+    bootstrap_datadir(
+        configfile_path=configfile_path, datadir_path=datadir_path, omit_config_check=True
+    )
 
 
 def print_config(configfile_path=None, datadir_path=None):
@@ -572,12 +572,16 @@ def update_repo(reponame, configfile_path=None, datadir_path=None, **kwargs):
 
 
 def err_not_bootstrapped_stage1(path):
-    msg = f"{APPNAME} is not correctly bootstrapped: configuration file {path} not found.\n" \
-            "run with option `--bootstrap` first."
+    msg = (
+        f"{APPNAME} is not correctly bootstrapped: configuration file {path} not found.\n"
+        "run with option `--bootstrap` first."
+    )
     logger.error(f'{u.bred("Error:")} {msg}')
 
 
 def err_not_bootstrapped_stage2(path):
-    msg = f"{APPNAME} or repo is not correctly bootstrapped: directory {path} not found.\n" \
-            "run with option `--bootstrap` or `--bootstrap--repo` first."
+    msg = (
+        f"{APPNAME} or repo is not correctly bootstrapped: directory {path} not found.\n"
+        "run with option `--bootstrap` or `--bootstrap--repo` first."
+    )
     logger.error(f'{u.bred("Error:")} {msg}')

@@ -52,7 +52,7 @@ class Abstract_WTG_TestCase(unittest.TestCase):
         # this is necessary because we will call scripts via subprocess
         self.environ = {
             f"{APPNAME}_DATADIR_PATH": TEST_WORK_DIR,
-            f"{APPNAME}_CONFIGFILE_PATH": TEST_CONFIGFILE_PATH
+            f"{APPNAME}_CONFIGFILE_PATH": TEST_CONFIGFILE_PATH,
         }
         self._store_otddc()
 
@@ -154,7 +154,7 @@ def run_command(cmd, env: dict, print_full_cmd=False) -> subprocess.CompletedPro
     assert isinstance(cmd, list)
 
     tokes = [f'{key}="{value}";' for key, value in complete_env.items()] + cmd
-    full_command = ' '.join(tokes)
+    full_command = " ".join(tokes)
     if print_full_cmd:
         print(f"→ CMD: {full_command}")
 
