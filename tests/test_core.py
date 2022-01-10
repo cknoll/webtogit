@@ -193,12 +193,26 @@ class TestCommandLine(Abstract_WTG_TestCase):
         res = run_command([APPNAME, "--update-all-repos"], self.environ)
         self.assertEqual(res.returncode, 0)
 
-    def test_run_main_invalid_reponame(self):
+    def test_run_main_nonedefault_reponame(self):
 
         self._bootstrap_app()
 
-        res = run_command([APPNAME, "invalid_repo_name_foo_bar"], self.environ)
+        res = run_command([APPNAME, "nonedefault_reponame"], self.environ)
         self.assertEqual(res.returncode, 3)
+
+        res = run_command([APPNAME, "--bootstrap-repo", "nonedefault_reponame"], self.environ)
+        self.assertEqual(res.returncode, 0)
+        self.assertNotIn("Nothing done", res.stdout)
+
+        res = run_command([APPNAME, "--bootstrap-repo", "nonedefault_reponame"], self.environ)
+        self.assertEqual(res.returncode, 0)
+        self.assertIn("Nothing done", res.stdout)
+
+        res = run_command([APPNAME, "nonedefault_reponame"], self.environ)
+        self.assertEqual(res.returncode, 0)
+
+        res = run_command([APPNAME, "--update-all-repos"], self.environ)
+        self.assertEqual(res.returncode, 0)
 
     def test_run_main_without_bootstrap(self):
         # first, run without any bootstrapping:

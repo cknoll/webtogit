@@ -32,7 +32,7 @@ def main():
     parser.add_argument(
         "--bootstrap-repo",
         help=f"Initialize a new (additional) repo.",
-        metavar="reponame",
+        metavar="REPONAME",
     )
     parser.add_argument(
         "--configfile-path",
@@ -68,8 +68,10 @@ def main():
         exit()
 
     elif args.bootstrap_repo:
-        raise NotImplementedError(
-            "Bootstrapping of a new repository, additionally to the default one"
+        core.bootstrap_datadir(
+            configfile_path=args.configfile_path,
+            datadir_path=args.datadir_path,
+            repo_name=args.bootstrap_repo,
         )
         exit()
 

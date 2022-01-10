@@ -483,6 +483,13 @@ def resolve_path_arg(path: str, type_: str) -> str:
         raise ValueError(f"Unkown type-string: {type_}")
 
 
+def load_config(configfile_path):
+    with open(configfile_path, "r") as txtfile:
+        config_dict = yaml.safe_load(txtfile)
+
+    return config_dict
+
+
 def bootstrap_config(configfile_path=None, datadir_path=None):
     """
     Try to load configfile. If it does not exist: create. Anyway: check
@@ -508,20 +515,17 @@ def bootstrap_config(configfile_path=None, datadir_path=None):
     return configfile_path
 
 
-def load_config(configfile_path):
-    with open(configfile_path, "r") as txtfile:
-        config_dict = yaml.safe_load(txtfile)
-
-    return config_dict
-
-
-def bootstrap_datadir(configfile_path=None, datadir_path=None, omit_config_check=False):
+def bootstrap_datadir(
+    configfile_path=None, datadir_path=None, omit_config_check=False, repo_name=None
+):
     """
-    Try to check datadir. If it does not exist: create. Anyway: check
+    Try to check datadir. If it does not exist: create. Anyway: check.
 
     :param configfile_path:
     :param datadir_path:
     :param omit_config_check:   Boolean flag to avoid unnecessary checking
+    :param repo_name:           Name of repository to bootstrap (optional)
+
     :return:
     """
     configfile_path = resolve_path_arg(configfile_path, "CONFIG")
@@ -532,19 +536,21 @@ def bootstrap_datadir(configfile_path=None, datadir_path=None, omit_config_check
 
     c = Core(configfile_path=configfile_path, datadir_path=datadir_path)
 
-    default_repo_path = os.path.join(c.datadir_path, config_dict["default_repo_name"])
-    if not os.path.isdir(default_repo_path):
-        c.init_archive_repo(config_dict["default_repo_name"])
+    if repo_name is None:
+        repo_path = os.path.join(c.datadir_path, config_dict["default_repo_name"])
     else:
-        logger.info("Datadir was already bootstrapped. Nothing done.")
-        logger.info(f"Default repo found: {default_repo_path}")
+        repo_path = os.path.join(c.datadir_path, repo_name)
+    if not os.path.isdir(repo_path):
+        c.init_archive_repo(repo_path)
+    else:
+        logger.info(f"Repo {repo_path} was already bootstrapped. Nothing done.")
     repos = c.find_repos()
 
     assert len(repos) > 0
 
-    repo_str = "\n -".join(repos)
+    repo_str = "\n  - ".join(repos)
 
-    logger.info(f"The following repos where found:\n{repo_str}\n")
+    logger.info(f"The following repos where found:\n  - {repo_str}\n")
 
     return c.datadir_path
 
@@ -582,6 +588,6 @@ def err_not_bootstrapped_stage1(path):
 def err_not_bootstrapped_stage2(path):
     msg = (
         f"{APPNAME} or repo is not correctly bootstrapped: directory {path} not found.\n"
-        "run with option `--bootstrap` or `--bootstrap--repo` first."
+        "run with option `--bootstrap` or `--bootstrap-repo` first."
     )
     logger.error(f'{u.bred("Error:")} {msg}')
