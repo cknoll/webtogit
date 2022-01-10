@@ -197,6 +197,9 @@ class TestCommandLine(Abstract_WTG_TestCase):
 
         self._bootstrap_app()
 
+        res = run_command([APPNAME, "--print-config"], self.environ)
+        self.assertIn("number_of_repos: 1", res.stdout)
+
         res = run_command([APPNAME, "nonedefault_reponame"], self.environ)
         self.assertEqual(res.returncode, 3)
 
@@ -204,6 +207,10 @@ class TestCommandLine(Abstract_WTG_TestCase):
         self.assertEqual(res.returncode, 0)
         self.assertNotIn("Nothing done", res.stdout)
 
+        res = run_command([APPNAME, "--print-config"], self.environ)
+        self.assertIn("number_of_repos: 2", res.stdout)
+
+        # ensure idempotence
         res = run_command([APPNAME, "--bootstrap-repo", "nonedefault_reponame"], self.environ)
         self.assertEqual(res.returncode, 0)
         self.assertIn("Nothing done", res.stdout)
@@ -213,6 +220,10 @@ class TestCommandLine(Abstract_WTG_TestCase):
 
         res = run_command([APPNAME, "--update-all-repos"], self.environ)
         self.assertEqual(res.returncode, 0)
+
+        self.assertIn(DEFAULT_REPO_NAME, res.stdout)
+        self.assertIn("nonedefault_reponame", res.stdout)
+
 
     def test_run_main_without_bootstrap(self):
         # first, run without any bootstrapping:

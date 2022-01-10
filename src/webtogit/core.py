@@ -311,7 +311,7 @@ class Core:
         return changedFiles
 
     def print_config(self):
-        keys = ("configfile_path", "datadir_path", "repos")
+        keys = ("configfile_path", "datadir_path", "repo_paths", "number_of_repos")
 
         print(f"\n{APPNAME} configuration:")
 
@@ -323,6 +323,13 @@ class Core:
 
         # use yaml to render the data structures
         print(yaml.safe_dump(tmpdict))
+
+    @property
+    def number_of_repos(self):
+        if self.repo_paths is None:
+            return 0
+        else:
+            return len(self.repo_paths)
 
     @staticmethod
     def make_report(changed_files: List[str]) -> str:
