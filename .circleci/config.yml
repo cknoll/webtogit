@@ -10,4 +10,5 @@ jobs:
       - checkout
       - run: pip install -r requirements.txt
       - run: pip install -e .
+      - run: echo $NO_IPS_EXCEPTHOOK
       - run: python -m unittest
