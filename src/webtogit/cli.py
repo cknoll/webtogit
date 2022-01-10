@@ -42,30 +42,47 @@ def main():
         "--datadir-path",
         help=f"Set the path to the data directory.",
     )
+    parser.add_argument(
+        "reponame",
+        help=(
+            f"The repository which should be updated (based on its {core.APPNAME}-sources.yml)\n"
+            f"default: {core.DEFAULT_REPO_NAME}"
+        ),
+        default=core.DEFAULT_REPO_NAME,
+        nargs='?',
+    )
+    parser.add_argument(
+        "--update-all-repos",
+        help=f"Update all repositories",
+        action="store_true",
+    )
 
     args = parser.parse_args()
 
-    # IPS()
     if args.bootstrap_config:
         core.bootstrap_config(configfile_path=args.configfile_path)
         exit()
 
-    if args.bootstrap:
+    elif args.bootstrap:
         core.bootstrap_app(configfile_path=args.configfile_path, datadir_path=args.datadir_path)
         exit()
 
-    if args.bootstrap_repo:
+    elif args.bootstrap_repo:
         raise NotImplementedError("Bootstrapping of a new repository, additionally to the default one")
         exit()
 
-    if args.print_config:
+    elif args.print_config:
         core.print_config(configfile_path=args.configfile_path, datadir_path=args.datadir_path)
         exit()
 
-    # this is executed if no argument is passed
+    elif args.update_all_repos:
+        core.update_all_repos(configfile_path=args.configfile_path, datadir_path=args.datadir_path)
+        exit()
 
-    repo_path = c.repo_paths[0]
-    c.handle_repo(repo_path)
+    else:
+        # this is executed if no argument is passed
+        core.update_repo(args.reponame)
+        exit()
 
 
 if __name__ == "__main__":

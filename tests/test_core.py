@@ -180,13 +180,28 @@ class TestCommandLine(Abstract_WTG_TestCase):
         self.assertEqual(res2.returncode, 0)
         self.assertNotIn("None", res2.stdout)
 
-    def test_run_main(self):
+    def test_run_main_regular(self):
 
         self._bootstrap_app()
 
         res = run_command([APPNAME], self.environ)
 
         self.assertEqual(res.returncode, 0)
+
+    def test_run_main_without_bootstrap(self):
+        # first, run without any bootstrapping:
+
+        res = run_command([APPNAME], self.environ)
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("--bootstrap", res.stderr)
+
+        # now, run with only stage 1 bootstrapping (config):
+        res = run_command([APPNAME, "--bootstrap-config"], self.environ)
+        self.assertEqual(res.returncode, 0)
+
+        res = run_command([APPNAME], self.environ)
+        self.assertEqual(res.returncode, 3)
+        self.assertIn("--bootstrap", res.stderr)
 
     def test_run_bootstrap_repo(self):
         res = run_command([APPNAME, "--bootstrap"], self.environ)
