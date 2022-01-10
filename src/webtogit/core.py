@@ -1,9 +1,7 @@
 import os
 import sys
-import shutil
 import requests
 from typing import List
-import pathlib
 import textwrap
 import logging
 

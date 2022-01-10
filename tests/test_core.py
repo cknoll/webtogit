@@ -18,7 +18,7 @@ from ipydex import IPS, activate_ips_on_exception, TracerFactory
 
 ST = TracerFactory()
 # activate_ips_on_exception()
-DEBUG = True
+DEBUG = False
 
 timestr = time.strftime("%Y-%m-%d--%H-%M-%S")
 
@@ -285,7 +285,7 @@ class TestBootstrap(Abstract_WTG_TestCase):
     def test_bootstrap_new_repo(self):
 
         appmod.bootstrap_config(TEST_CONFIGFILE_PATH)
-        c = Core()
+        c = Core(configfile_path=TEST_CONFIGFILE_PATH)
 
         dirname = "test_repo_2"
         c.init_archive_repo(dirname)

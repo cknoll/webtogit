@@ -11,4 +11,8 @@ jobs:
       - run: pip install -r requirements.txt
       - run: pip install -e .
       - run: echo $NO_IPS_EXCEPTHOOK
+      # assume git is configured
+      - run: git config --global user.email "you@example.com"
+      - run: git config --global user.name "Your Name"
+
       - run: python -m unittest
